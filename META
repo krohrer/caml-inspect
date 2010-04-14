@@ -1,0 +1,4 @@
+description = "Inspect and dump values on the OCaml heap."
+version = "0.1"
+archive(byte) = "inspect.cma"
+archive(native) = "inspect.cmxa"
