@@ -46,7 +46,7 @@ struct
   let dump_to_file ?context filename o =
     with_file_out_channel filename (fun outc -> dump_to_out_channel ?context outc o)
 
-  let dump_osx ?context ?(cmd="dot") o =
+  let dump_osx ?context ?(cmd="dot") ?(format="pdf") o =
     let exec cmd =
       if Sys.command cmd <> 0 then (
 	Printf.eprintf "OCaml Inspect: Could not execute command: %s" cmd;
@@ -56,7 +56,6 @@ struct
 	true
     in      
     let basename = Filename.temp_file "camldump" "." in
-    let format = "pdf" in
     let dotfile = basename ^ "dot" in
     let outfile = basename ^ format in
       dump_to_file ?context dotfile o;

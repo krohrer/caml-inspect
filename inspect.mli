@@ -66,10 +66,11 @@ sig
   val dump_with_formatter : ?context:context -> Format.formatter -> 'a -> unit
     (** Dump using the [Format] module for pretty printing. *)
 
-  val dump_osx : ?context:context -> ?cmd:string -> 'a -> unit
-    (** [dump_osx ?context ?cmd o] dumps the value [o] to a temporary
-	file, runs the Graphviz program given by [cmd] on it and
-	displays the resulting PDF using the Preview application.
+  val dump_osx : ?context:context -> ?cmd:string -> ?format:string -> 'a -> unit
+    (** [dump_osx ?context ?cmd ?format o] dumps the value [o] to a
+	temporary file, runs the Graphviz program given by [cmd] on it
+	to generate output as specified by [format], and then opens
+	the generated output with the [open] command. The default output format is "pdf".
 
 	E.g. [Inspect.Dot.dump_osx ~cmd:"neato" (Inspect.test_data ())]
 
