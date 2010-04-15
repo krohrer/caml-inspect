@@ -6,3 +6,4 @@
 *.so
 ._d
 
+.DS_Store

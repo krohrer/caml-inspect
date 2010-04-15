@@ -264,7 +264,7 @@ let description r =
 	  | Custom_int64 i     -> sprintf "Int64: %Ld" i
 	  | Custom_bigarray    -> "Bigarray"
 	  | Custom_channel     -> "Channel"
-	  | Custom_unknown     -> sprintf "Custom: %S" (custom_identifier r)
+	  | Custom_unknown     -> sprintf "Custom: %S %s" (custom_identifier r) (custom_ops_info r)
 	  | Not_custom         -> failwith "Value.description: should be a custom value"
       )
     | Int          -> sprintf "Int: %d" (Obj.magic r : int)
