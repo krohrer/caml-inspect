@@ -13,6 +13,73 @@ let with_file_out_channel filename f =
 
 (*----------------------------------------------------------------------------*)
 
+exception TestException of string * int
+
+let rec sexpr_test_data () =
+  let rec l = 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: l in
+  let rec drop l i =
+    if i = 0 then
+      l
+    else
+      drop (List.tl l) (i - 1)
+  in
+  let rec f x =
+    l
+  and g y =
+    f (y :: l)
+  in
+  let o = object
+    val brog = 4
+    val brag = 51251
+    method blah = 3 
+    method foo () a = a
+  end in
+  let data = 
+    ([|1|], l, (1,2), [|3; 4|], flush, 1.0, [|2.0; 3.0|],
+     TestException ("TestException", -1),
+     ("Hello world", lazy (3 + 5)), g, f, let s = "STRING" in (s, "STRING", s),
+     Array.init 20 (drop l),
+     stdout, Format.printf, (o, Dump_dot.default_context, Dump_sexpr.default_context))
+  in
+    Obj.repr data
+
+let rec dot_test_data () =
+  let rec l = 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: l in
+  let rec drop l i =
+    if i = 0 then
+      l
+    else
+      drop (List.tl l) (i - 1)
+  in
+  let rec f x =
+    l
+  and g y =
+    f (y :: l)
+  in
+  let o = object
+    val brog = 4
+    val brag = 51251
+    method blah = 3 
+    method foo () a = a
+  end in
+  let data = 
+    ([|1|], l, (1,2), [|3; 4|], flush, 1.0, [|2.0; 3.0|],
+     TestException ("TestException", -1),
+     String.make 1000000 'a',
+     ("Hello world", lazy (3 + 5)), g, f, let s = "STRING" in (s, "STRING", s),
+     Array.init 20 (drop l),
+     stdout, Format.printf, (o, Dump_dot.default_context, Dump_sexpr.default_context),
+     [String.make 10 'a'; String.make 100 'a'; String.make 1000 'a'; String.make 10000000 'a'],
+    [Array.make 1 1; Array.make 4 4; Array.make 16 16; Array.make 64 64; Array.make 256 256;
+     Array.make 1024 1024; Array.make 1000000 0],
+    [Array.make 1 1.; Array.make 4 4.; Array.make 16 16.; Array.make 64 64.; Array.make 256 256.;
+     Array.make 1024 1024.; Array.make 1000000 0.]
+    )
+  in
+    Obj.repr data
+
+(*----------------------------------------------------------------------------*)
+
 module Sexpr =
 struct
   include Dump_sexpr
@@ -27,6 +94,8 @@ struct
 
   let dump_to_file ?context filename o =
     with_file_out_channel filename (fun outc -> dump_to_out_channel ?context outc o)
+
+  let test_data () = sexpr_test_data ()
 end
 
 (*----------------------------------------------------------------------------*)
@@ -63,6 +132,8 @@ struct
       let outcmd = sprintf "open %S" outfile in
 	if exec dotcmd && exec outcmd then
 	  ()
+
+  let test_data () = sexpr_test_data ()
 end
 
 (*----------------------------------------------------------------------------*)

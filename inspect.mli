@@ -17,6 +17,14 @@
     temporary PDF file, which will then be opened in Preview.
 *)
 
+val count_heap_words_and_objects : 'a -> int * int
+  (** Count the number of words the object graph occupies in the OCaml
+      value heap, and the number of distinct nodes. The size of a word
+      is given by [Sys.word_size].
+      
+      {i NOTE:} The number of heap words does not include the block header.
+      Simply adding the number of objects to the total should do the trick, though. *)
+
 (** Dumping arbitrary values as S-expression *)
 module Sexpr :
 sig
@@ -40,6 +48,8 @@ sig
 
   val dump_with_formatter : ?context:context -> Format.formatter -> 'a -> unit
     (** Dump using the [Format] module for pretty printing. *)
+
+  val test_data : unit -> Obj.t
 end
 
 (** Dumping arbitrary values in the Graphviz DOT language *)
@@ -75,16 +85,7 @@ sig
 	E.g. [Inspect.Dot.dump_osx ~cmd:"neato" (Inspect.test_data ())]
 
 	This function will block while the graph is being generated. *)
+
+  val test_data : unit -> Obj.t
+    (** Generate test data to inspect *)
 end
-
-val count_heap_words_and_objects : 'a -> int * int
-  (** Count the number of words the object graph occupies in the OCaml
-      value heap, and the number of distinct nodes. The size of a word
-      is given by [Sys.word_size].
-      
-      {i NOTE:} The number of heap words does not include the block header.
-      Simply adding the number of objects to the total should do the trick, though. *)
-
-val test_data : unit -> Obj.t
-  (** Generate test data to inspect *)
-
