@@ -26,7 +26,7 @@ object
 
   method should_expand_node : Obj.t -> bool
   method should_follow_edge : src:Obj.t -> field:int -> dst:Obj.t -> bool
-  method max_size : int
+  method max_fields : int
 end
 
 (*----------------------------------------------------------------------------*)
@@ -95,7 +95,7 @@ let attrs_for_value r attrs =
     | Value.Custom ->
 	attrs_colorscheme_for_value ~k:1.0 ~lower:5 "reds" 9 r attrs
 
-let make_context ?(max_size=5) () =
+let make_context ?(max_fields=5) () =
 object
   method graph_attrs =
     [
@@ -121,7 +121,7 @@ object
   method node_attrs ?(root=false) ~label r =
     let attrs_for_root attrs = 
       if root then
-	("fontcolor", "#ff0000") :: ("penwidth", "5.0") :: attrs
+	(* ("fontcolor", "#ff0000") :: *) ("penwidth", "8.0") :: attrs
       else
 	attrs
     in
@@ -147,50 +147,14 @@ object
       | _ ->
 	  true
 
-  method max_size = max_size
+  method max_fields = max_fields
 end
 
 let default_context = make_context ()
 
 (*----------------------------------------------------------------------------*)
 
-let rec dump ?context o =
-  dump_with_formatter ?context std_formatter (Value.repr o)
-
-and dump_osx ?context cmd o =
-  let exec cmd =
-    if Sys.command cmd <> 0 then (
-      Printf.eprintf "OCaml Inspect: Could not execute command: %s" cmd;
-      false
-    )
-    else
-      true
-  in      
-  let basename = Filename.temp_file "camldump" "." in
-  let format = "pdf" in
-  let dotfile = basename ^ "dot" in
-  let outfile = basename ^ format in
-    dump_to_file ?context dotfile o;
-    let dotcmd = sprintf "%S -T%s -o %S %S" cmd format outfile dotfile in
-    let outcmd = sprintf "open %S" outfile in
-      if exec dotcmd && exec outcmd then
-	()
-
-and dump_command ?context ?(cmd="dot") o =
-  (* TODO : support other platforms here *)
-  dump_osx ?context cmd o
-
-and dump_to_file ?context path o =
-  let oc = open_out path in
-    try
-      let fmt = formatter_of_out_channel oc in
-	dump_with_formatter ?context fmt (Value.repr o);
-	flush oc;
-	close_out oc
-    with
-      | _ -> close_out oc
-
-and dump_with_formatter ?(context=default_context) fmt r =
+let dump_with_formatter ?(context=default_context) fmt o =
   let queue = Queue.create () in
   let strbuf = string_with_buffer 80 in
 
@@ -248,7 +212,7 @@ and dump_with_formatter ?(context=default_context) fmt r =
   in
 
   let value_to_label_and_links id r =
-    let max_size = context#max_size in
+    let max_fields = context#max_fields in
     let expand = context#should_expand_node r in
     let bstr b s = Buffer.add_string b s
     and bsep b () = Buffer.add_string b "| "
@@ -259,8 +223,8 @@ and dump_with_formatter ?(context=default_context) fmt r =
       match Value.tag r with
 	| _ when Obj.tag r < Obj.no_scan_tag && expand ->
 	    let n = Obj.size r in
-	    let n' = min max_size n in
-	    let cutoff = if n' = max_size then n' - 1 else max_int in
+	    let n' = min max_fields n in
+	    let cutoff = if n' = max_fields then n' - 1 else max_int in
 	      for i = 0 to n' - 1 do
 		bsep b ();
 		if i = cutoff then
@@ -272,8 +236,8 @@ and dump_with_formatter ?(context=default_context) fmt r =
 	| Value.Double_array when expand ->
 	    let a : float array = Obj.magic r in
 	    let n = Array.length a in
-	    let n' = min max_size n in
-	    let cutoff = if n' = max_size then n' - 1 else max_int in
+	    let n' = min max_fields n in
+	    let cutoff = if n' = max_fields then n' - 1 else max_int in
 	      for i = 0 to n' - 1 do
 		bsep b ();
 		if i = cutoff then
@@ -283,8 +247,8 @@ and dump_with_formatter ?(context=default_context) fmt r =
 	      done
 	| Value.Custom | Value.Abstract when expand ->
 	    let n = Obj.size r in
-	    let n' = min max_size n in
-	    let cutoff = if n' = max_size then n' - 1 else max_int in
+	    let n' = min max_fields n in
+	    let cutoff = if n' = max_fields then n' - 1 else max_int in
 	      for i = 0 to n' - 1 do
 		bsep b ();
 		if i = cutoff then
@@ -296,8 +260,8 @@ and dump_with_formatter ?(context=default_context) fmt r =
 	    let lsub = 16 in
 	    let s : string = Obj.magic r in
 	    let l = String.length s in
-	    let n' = min max_size ((l + lsub - 1) / lsub) in
-	    let cutoff = if n' = max_size then n' - 1 else max_int in
+	    let n' = min max_fields ((l + lsub - 1) / lsub) in
+	    let cutoff = if n' = max_fields then n' - 1 else max_int in
 	      for i = 0 to n' - 1 do
 		bsep b ();
 		if i = cutoff then
@@ -339,6 +303,7 @@ and dump_with_formatter ?(context=default_context) fmt r =
       node_one fmt id node_attrs;
       List.iter aux links
   in
+  let r = Obj.repr o in
   let root_id = id_of_value r in
     fprintf fmt "@[<v>@[<v 2>digraph {@,";
     node_one fmt "graph" (("root", root_id) :: context#graph_attrs);

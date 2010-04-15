@@ -20,21 +20,7 @@ let default_context = make_context ()
 
 (*----------------------------------------------------------------------------*)
 
-let rec dump ?context o =
-  dump_with_formatter ?context std_formatter (Value.repr o)
-
-and dump_to_channel ?context c o =
-  dump_with_formatter ?context (formatter_of_out_channel c) (Value.repr o)
-
-and dump_to_buffer ?context b o =
-  dump_with_formatter ?context (formatter_of_buffer b) (Value.repr o)
-
-and dump_to_string ?context o =
-  let b = Buffer.create 128 in
-    dump_to_buffer ?context b o;
-    Buffer.contents b
-
-and dump_with_formatter ?(context=default_context) fmt o =
+let dump_with_formatter ?(context=default_context) fmt o =
   let queue = Queue.create () in
   let indentation_for_string id = 3 (* String.length id + 2 *) in
 

@@ -2,10 +2,11 @@ OCAMLMAKEFILE = ./OCamlMakefile
 
 OCAMLFLAGS = -w Aelz
 
-SOURCES = value.ml value_cimpl.c dump_dot.ml dump_sexpr.ml inspect.ml
+SOURCES = value.mli value.ml value_cimpl.c dump_dot.mli dump_dot.ml dump_dot.mli dump_sexpr.ml inspect.mli inspect.ml
+DOC_FILES = inspect.mli
 
 RESULT = inspect
 
-all:ncl bcl
+all:ncl bcl htdoc
 
 -include $(OCAMLMAKEFILE)

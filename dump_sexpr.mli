@@ -10,11 +10,4 @@ val default_context : context
 
 val make_context : ?nesting:int -> unit -> context
 
-val dump : ?context:context -> 'a -> unit
-
-val dump_to_string : ?context:context -> 'a -> string
-
-val dump_to_buffer : ?context:context -> Buffer.t -> 'a -> unit
-
-val dump_to_channel : ?context:context -> out_channel -> 'a -> unit
-
+val dump_with_formatter : ?context:context -> Format.formatter -> 'a -> unit

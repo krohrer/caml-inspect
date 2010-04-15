@@ -1,10 +1,32 @@
 (* Kaspar Rohrer, Thu Apr  8 02:24:17 CEST 2010 *)
 
+open Printf
+
+let with_file_out_channel filename f = 
+  let outc = open_out filename in
+    try
+      f outc;
+      flush outc;
+      close_out outc
+    with
+      | _ -> close_out outc
+
 (*----------------------------------------------------------------------------*)
 
 module Sexpr =
 struct
   include Dump_sexpr
+
+  let dump ?context o =
+    let fmt = Format.std_formatter in
+      dump_with_formatter ?context fmt o
+
+  let dump_to_out_channel ?context outc o =
+    let fmt = Format.formatter_of_out_channel outc in
+      dump_with_formatter ?context fmt o
+
+  let dump_to_file ?context filename o =
+    with_file_out_channel filename (fun outc -> dump_to_out_channel ?context outc o)
 end
 
 (*----------------------------------------------------------------------------*)
@@ -12,6 +34,36 @@ end
 module Dot =
 struct
   include Dump_dot
+
+  let dump ?context o =
+    let fmt = Format.std_formatter in
+      dump_with_formatter ?context fmt o
+
+  let dump_to_out_channel ?context outc o =
+    let fmt = Format.formatter_of_out_channel outc in
+      dump_with_formatter ?context fmt o
+
+  let dump_to_file ?context filename o =
+    with_file_out_channel filename (fun outc -> dump_to_out_channel ?context outc o)
+
+  let dump_osx ?context ?(cmd="dot") o =
+    let exec cmd =
+      if Sys.command cmd <> 0 then (
+	Printf.eprintf "OCaml Inspect: Could not execute command: %s" cmd;
+	false
+      )
+      else
+	true
+    in      
+    let basename = Filename.temp_file "camldump" "." in
+    let format = "pdf" in
+    let dotfile = basename ^ "dot" in
+    let outfile = basename ^ format in
+      dump_to_file ?context dotfile o;
+      let dotcmd = sprintf "%S -T%s -o %S %S" cmd format outfile dotfile in
+      let outcmd = sprintf "open %S" outfile in
+	if exec dotcmd && exec outcmd then
+	  ()
 end
 
 (*----------------------------------------------------------------------------*)

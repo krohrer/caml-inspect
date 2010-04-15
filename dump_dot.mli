@@ -12,17 +12,11 @@ object
 
   method should_expand_node : Obj.t -> bool
   method should_follow_edge : src:Obj.t -> field:int -> dst:Obj.t -> bool
-  method max_size : int
+  method max_fields : int
 end
 
 val default_context : context
 
-val make_context : ?max_size:int -> unit -> context
+val make_context : ?max_fields:int -> unit -> context
 
-(* [max_size] can be negative as well, in which case the record does
-   not even show if there are additional fields. *)
-val dump : ?context:context -> 'a -> unit
-
-val dump_to_file : ?context:context -> string -> 'a -> unit
-
-val dump_command : ?context:context -> ?cmd:string -> 'a -> unit
+val dump_with_formatter : ?context:context -> Format.formatter -> 'a -> unit
