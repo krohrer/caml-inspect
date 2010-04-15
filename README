@@ -47,7 +47,6 @@ And to uninstall it
 
 > make libuninstall
 
-License:
---------
+For development, you may instead run
 
-See LICENSE
+> sudo ln -s `pwd` `ocamlfind printconf path`/inspect
