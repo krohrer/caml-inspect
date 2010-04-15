@@ -171,21 +171,16 @@ let dump_with_formatter ?(context=default_context) fmt o =
 
   let node_open fmt id =
     fprintf fmt "@[<2>%s@ [" id
-
   and node_close fmt () =
     fprintf fmt "];@]@,"
-
   and link_open fmt id i fid =
     let src = id in
     let dst = fid in
       fprintf fmt "@[<2>%s ->@ %s@ [" src dst
-
   and link_close fmt () =
     fprintf fmt "];@]@,"
-
   and attr_open fmt name =
     fprintf fmt "@[<h>%s = " name
-
   and attr_close fmt () =
     fprintf fmt ",@]@ "
   in
@@ -194,17 +189,14 @@ let dump_with_formatter ?(context=default_context) fmt o =
     node_open fmt id;
     attr_list fmt attrs;
     node_close fmt ()
-
   and link_one fmt id i fid attrs =
     link_open fmt id i fid;
     attr_list fmt attrs;
     link_close fmt ()
-
   and attr_one fmt name value =
     attr_open fmt name;
     fprintf fmt "%S" value;
     attr_close fmt ()
-
   and attr_list fmt attrs =
       (* The list has to be reversed because of the way Graphviz handles
 	 duplicate attributes. *)

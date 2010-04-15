@@ -37,7 +37,7 @@ sig
     
   val make_context : ?nesting:int -> unit -> context
     (** Create a custom context. [nesting] is how deep the printer
-	recurses before it prints references *)
+	recurses before printing *)
     
   val dump : ?context:context -> 'a -> unit
     (** Dump to [stdout] *)

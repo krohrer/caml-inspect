@@ -2,8 +2,8 @@
 
 class type context =
 object
+  method is_not_too_deep : depth:int -> Value.t -> bool
   method should_expand : Value.t -> bool
-  method nesting : int
 end
 
 val default_context : context
