@@ -31,6 +31,13 @@ type custom =
   | Custom_unknown
   | Not_custom
 
+module TagSet : sig
+  include Set.S with type elt = tag
+
+  val all : t
+  val of_list : tag list -> t
+end
+
 val bits : t -> nativeint
 val repr : 'a -> t
 val tag : t -> tag
@@ -39,7 +46,7 @@ val is_in_heap : t -> bool
 
 val custom_identifier : t -> string
 val custom_value : t -> custom
-val custom_info : t -> string
+val custom_ops_info : t -> string
 
 val custom_is_int : t -> bool
 
@@ -51,3 +58,6 @@ val custom_has_deserialize : t -> bool
 
 val mnemonic : t -> string
 val mnemonic_unknown : string
+
+val abbrev : t -> string
+val description : t -> string

@@ -17,10 +17,12 @@ end
 
 val default_context : context
 
+val make_context : ?max_size:int -> unit -> context
+
 (* [max_size] can be negative as well, in which case the record does
    not even show if there are additional fields. *)
 val dump : ?context:context -> 'a -> unit
 
 val dump_to_file : ?context:context -> string -> 'a -> unit
 
-val dump_command : ?context:context -> 'a -> bool
+val dump_command : ?context:context -> ?cmd:string -> 'a -> unit

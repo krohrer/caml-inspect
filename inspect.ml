@@ -2,8 +2,17 @@
 
 (*----------------------------------------------------------------------------*)
 
-let dump a = Dump_sexpr.dump a
-let dot a = ignore (Dump_dot.dump_command a)
+module Sexpr =
+struct
+  include Dump_sexpr
+end
+
+(*----------------------------------------------------------------------------*)
+
+module Dot =
+struct
+  include Dump_dot
+end
 
 (*----------------------------------------------------------------------------*)
 
@@ -28,6 +37,8 @@ let count_heap_words_and_objects o =
 
 (*----------------------------------------------------------------------------*)
 
+exception TestException of string * int
+
 let rec test_data () =
   let rec l = 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: l in
   let rec drop l i =
@@ -49,10 +60,11 @@ let rec test_data () =
   end in
   let data = 
     ([|1|], l, (1,2), [|3; 4|], flush, 1.0, [|2.0; 3.0|],
+     TestException ("TestException", -1),
      String.make 1000000 'a',
      ("Hello world", lazy (3 + 5)), g, f, let s = "STRING" in (s, "STRING", s),
      Array.init 20 (drop l),
-     stdout, Printf.printf, (o, Dump_dot.default_context, Dump_sexpr.default_context),
+     stdout, Format.printf, (o, Dump_dot.default_context, Dump_sexpr.default_context),
      [String.make 10 'a'; String.make 100 'a'; String.make 1000 'a'; String.make 10000000 'a'],
     [Array.make 1 1; Array.make 4 4; Array.make 16 16; Array.make 64 64; Array.make 256 256;
      Array.make 1024 1024; Array.make 1000000 0],

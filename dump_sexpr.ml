@@ -7,14 +7,16 @@ module HT = Hashtbl.Make(Value)
 class type context =
 object
   method should_expand : Value.t -> bool
-  method max_depth : int
+  method nesting : int
 end
 
-let default_context : context =
+let make_context ?(nesting=30) () =
 object
   method should_expand v = true
-  method max_depth = 20
+  method nesting = nesting
 end
+
+let default_context = make_context ()
 
 (*----------------------------------------------------------------------------*)
 
@@ -78,7 +80,7 @@ and dump_with_formatter ?(context=default_context) fmt o =
   and sexpr_abstract fmt r =
     sexpr_open fmt (Value.mnemonic r);
     sexpr_sep fmt ();
-    sexpr_int fmt (Value.heap_words r);
+    fprintf fmt ":SIZE %d" (Value.heap_words r);
     sexpr_close fmt ()
 
   and sexpr_custom fmt r =
@@ -92,9 +94,11 @@ and dump_with_formatter ?(context=default_context) fmt o =
       | _ ->
 	  sexpr_open fmt (Value.mnemonic r);
 	  sexpr_sep fmt ();
-	  sexpr_string fmt (Value.custom_identifier r);
+	  fprintf fmt ":ID %S" (Value.custom_identifier r);
 	  sexpr_sep fmt ();
-	  sexpr_int fmt (Value.heap_words r);
+	  fprintf fmt ":SIZE %d" (Value.heap_words r);
+	  sexpr_sep fmt ();
+	  fprintf fmt ":OPS %s" (Value.custom_ops_info r);
 	  sexpr_close fmt ()
 
   and sexpr_mnemonic fmt r =
@@ -136,17 +140,17 @@ and dump_with_formatter ?(context=default_context) fmt o =
       sexpr_ref fmt (id_find r)
     with Not_found -> (
       let id = id_of_value r in
-	if depth <= context#max_depth then (
+	if depth <= context#nesting then (
 	  sexpr_open fmt id;
 	  body ~depth fmt r;
 	  sexpr_close fmt ()
-	) else if context#max_depth > 0 then (
+	) else if context#nesting > 0 then (
 	  (* Postpone *)
 	  sexpr_ref fmt id;
 	  Queue.push r queue
 	)
 	else (
-	  (* Cant print with max_depth < 0 *)
+	  (* Cant print with nesting < 0 *)
 	)
     )
 

@@ -1,5 +1,7 @@
 (* Kaspar Rohrer, Tue Apr 13 15:36:09 CEST 2010 *)
 
+open Printf
+
 type t = Obj.t
 
 let compare = compare
@@ -43,8 +45,8 @@ external custom_has_hash : t -> bool = "inspect_custom_has_hash"
 external custom_has_serialize : t -> bool = "inspect_custom_has_serialize"
 external custom_has_deserialize : t -> bool = "inspect_custom_has_deserialize"
 
-let custom_info r =
-  Printf.sprintf "%c%c%c%c%c"
+let custom_ops_info r =
+  sprintf "%c%c%c%c%c"
     (if custom_has_finalize r    then 'F' else '-')
     (if custom_has_compare r     then 'C' else '-')
     (if custom_has_hash r        then 'H' else '-')
@@ -56,6 +58,32 @@ let int32_id = "_i"
 let int64_id = "_j"
 let bigarray_id = "_bigarray"
 let channel_id = "_chan"
+
+module TagSet =
+struct
+  include Set.Make(struct type t = tag let compare = compare end)
+
+  let of_list tlist =
+    List.fold_left (fun s t -> add t s) empty tlist
+
+  let all =
+    of_list [
+      Lazy;
+      Closure;
+      Object;
+      Infix;
+      Forward;
+      Block;
+      Abstract;
+      String;
+      Double;
+      Double_array;
+      Custom;
+      Int;
+      Out_of_heap;
+      Unaligned;
+    ]
+end
 
 (* Make sure the known custom identifiers are in sync. *)
 let _ =
@@ -155,7 +183,7 @@ let tag r =
     | 1000 -> Int
     | 1001 -> Out_of_heap
     | 1002 -> Unaligned
-    | x -> failwith (Printf.sprintf "OCaml value with unknown tag = %d" x)
+    | x -> failwith (sprintf "OCaml value with unknown tag = %d" x)
 
 (* Slower? and safer
 let is_in_heap r =
@@ -178,7 +206,7 @@ let mnemonic r =
     | Object -> "OBJ"
     | Infix -> "INFX"
     | Forward -> "FWD"
-    | Block -> Printf.sprintf "BL%d" (Obj.tag r)
+    | Block -> sprintf "BL%d" (Obj.tag r)
     | Abstract -> "ABST"
     | String -> "STR"
     | Double -> "DBL"
@@ -191,6 +219,32 @@ let mnemonic r =
 let mnemonic_unknown =
   "????"
 
+let abbrev r =
+  match tag r with
+    | Lazy
+    | Closure
+    | Object
+    | Infix
+    | Forward
+    | Block
+    | Double_array
+    | String
+    | Abstract     -> sprintf "%s#%d" (mnemonic r) (heap_words r)
+    | Double       -> sprintf "%g" (Obj.magic r : float)
+    | Custom       -> (
+	match custom_value r with
+	  | Custom_nativeint n -> sprintf "%nd" n
+	  | Custom_int32 i     -> sprintf "%ld" i
+	  | Custom_int64 i     -> sprintf "%Ld" i
+	  | Custom_bigarray    -> "Bigarray"
+	  | Custom_channel     -> "Channel"
+	  | Custom_unknown     -> sprintf "%S %s" (custom_identifier r) (custom_ops_info r)
+	  | Not_custom         -> failwith "Value.description: should be a custom value"
+      )
+    | Int          -> string_of_int (Obj.magic r : int)
+    | Out_of_heap  -> sprintf "0x%nX" (bits r)
+    | Unaligned    -> sprintf "0x%nX" (bits r)
+
 let description r =
   match tag r with
     | Lazy         -> "Lazy: #" ^ string_of_int (Obj.size r)
@@ -198,21 +252,21 @@ let description r =
     | Object       -> "Object: #" ^ string_of_int (Obj.size r)
     | Infix        -> "Infix: #" ^ string_of_int (Obj.size r)
     | Forward      -> "Forward: #" ^ string_of_int (Obj.size r)
-    | Block        -> Printf.sprintf "Block[%d]: #%d" (Obj.tag r) (Obj.size r)
+    | Block        -> sprintf "Block[%d]: #%d" (Obj.tag r) (Obj.size r)
     | Abstract     -> "Abstract: #" ^ string_of_int (Obj.size r)
-    | String       -> Printf.sprintf "String: %d chars)" (String.length (Obj.magic r : string))
-    | Double       -> Printf.sprintf "Double: %g" (Obj.magic r : float)
-    | Double_array -> Printf.sprintf "Double_array: %d floats" (Array.length (Obj.magic r : float array))
+    | String       -> sprintf "String: %d chars" (String.length (Obj.magic r : string))
+    | Double       -> sprintf "Double: %g" (Obj.magic r : float)
+    | Double_array -> sprintf "Double_array: %d floats" (Array.length (Obj.magic r : float array))
     | Custom       -> (
 	match custom_value r with
-	  | Custom_nativeint n -> Printf.sprintf "Nativeint: %nd" n
-	  | Custom_int32 i     -> Printf.sprintf "Int32: %ld" i
-	  | Custom_int64 i     -> Printf.sprintf "Int64: %Ld" i
+	  | Custom_nativeint n -> sprintf "Nativeint: %nd" n
+	  | Custom_int32 i     -> sprintf "Int32: %ld" i
+	  | Custom_int64 i     -> sprintf "Int64: %Ld" i
 	  | Custom_bigarray    -> "Bigarray"
 	  | Custom_channel     -> "Channel"
-	  | Custom_unknown     -> Printf.sprintf "Custom: %S" (custom_identifier r)
+	  | Custom_unknown     -> sprintf "Custom: %S" (custom_identifier r)
 	  | Not_custom         -> failwith "Value.description: should be a custom value"
       )
-    | Int          -> Printf.sprintf "Int: %d" (Obj.magic r : int)
-    | Out_of_heap  -> Printf.sprintf "Out_of_heap (0x%nX)" (bits r)
-    | Unaligned    -> Printf.sprintf "Unaligned (0x%nX)" (bits r)
+    | Int          -> sprintf "Int: %d" (Obj.magic r : int)
+    | Out_of_heap  -> sprintf "Out_of_heap (0x%nX)" (bits r)
+    | Unaligned    -> sprintf "Unaligned (0x%nX)" (bits r)

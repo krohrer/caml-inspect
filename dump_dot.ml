@@ -95,7 +95,7 @@ let attrs_for_value r attrs =
     | Value.Custom ->
 	attrs_colorscheme_for_value ~k:1.0 ~lower:5 "reds" 9 r attrs
 
-let default_context : context =
+let make_context ?(max_size=5) () =
 object
   method graph_attrs =
     [
@@ -119,39 +119,66 @@ object
     ]
 
   method node_attrs ?(root=false) ~label r =
-    let attrs = 
-      if root then [ "penwidth", "4.0" ] else []
+    let attrs_for_root attrs = 
+      if root then
+	("fontcolor", "#ff0000") :: ("penwidth", "5.0") :: attrs
+      else
+	attrs
     in
-      ("label", label) :: attrs |>> attrs_for_value r
+      ["label", label] |>> attrs_for_value r |>> attrs_for_root
 
   method edge_attrs ~src ~field ~dst =
     [ "label", string_of_int field ]
 
   method should_expand_node r = true
-  method should_follow_edge ~src ~field ~dst = true
-  method max_size = 20
+  method should_follow_edge ~src ~field ~dst =
+    match Value.tag dst with
+      | Value.Double ->
+	  false
+      | Value.Custom -> (
+	  match Value.custom_value dst with
+	    | Value.Custom_nativeint _
+	    | Value.Custom_int32 _
+	    | Value.Custom_int64 _ ->
+		false
+	    | _ ->
+		true
+	)
+      | _ ->
+	  true
+
+  method max_size = max_size
 end
+
+let default_context = make_context ()
 
 (*----------------------------------------------------------------------------*)
 
 let rec dump ?context o =
   dump_with_formatter ?context std_formatter (Value.repr o)
 
-and dump_osx ?context o =
+and dump_osx ?context cmd o =
+  let exec cmd =
+    if Sys.command cmd <> 0 then (
+      Printf.eprintf "OCaml Inspect: Could not execute command: %s" cmd;
+      false
+    )
+    else
+      true
+  in      
   let basename = Filename.temp_file "camldump" "." in
-  let pr = "dot" in
   let format = "pdf" in
   let dotfile = basename ^ "dot" in
   let outfile = basename ^ format in
     dump_to_file ?context dotfile o;
-    let dotcmd = sprintf "%s -T%s -o %S %S" pr format outfile dotfile in
+    let dotcmd = sprintf "%S -T%s -o %S %S" cmd format outfile dotfile in
     let outcmd = sprintf "open %S" outfile in
-    Sys.command dotcmd == 0 &&
-      Sys.command outcmd == 0
+      if exec dotcmd && exec outcmd then
+	()
 
-and dump_command ?context o =
+and dump_command ?context ?(cmd="dot") o =
   (* TODO : support other platforms here *)
-  dump_osx ?context o
+  dump_osx ?context cmd o
 
 and dump_to_file ?context path o =
   let oc = open_out path in
@@ -220,55 +247,7 @@ and dump_with_formatter ?(context=default_context) fmt r =
       List.iter (fun (k,v) -> attr_one fmt k v) (List.rev attrs)
   in
 
-  let value_descr ?(long=false) r t =
-    let string_ellipsis = "[..]" in
-    let string_max_length = 8 in
-    let string_cutoff = 4 in
-      match Value.tag r with
-	| Value.Double ->
-	    let d : float = Obj.magic r in
-	      if long then
-		sprintf "%s %g" (Value.mnemonic r) d
-	      else
-		string_of_float d
-	| Value.Int ->
-	    let i : int = Obj.magic r in
-	      if long then
-		sprintf "%s %d" (Value.mnemonic r) i
-	      else
-		string_of_int i
-	| Value.Out_of_heap
-	| Value.Unaligned ->
-	    if long then
-	      sprintf "%s 0x%nX" (Value.mnemonic r) (Value.bits r)
-	    else
-	      sprintf "0x%nX" (Value.bits r)
-	| Value.Lazy 
-	| Value.Forward
-	| Value.Custom 
-	| Value.Block 
-	| Value.Closure 
-	| Value.Object 
-	| Value.Infix 
-	| Value.Abstract ->
-	    sprintf "%s #%d" (Value.mnemonic r) (Obj.size r)
-	| Value.Double_array ->
-	    let a : float array = Obj.magic r in
-	      sprintf "%s #%d" (Value.mnemonic r) (Array.length a)
-	| Value.String ->
-	    let s : string = Obj.magic r in
-	    let l = String.length s in
-	    let s' =
-	      if l > string_max_length then
-		String.sub s 0 string_cutoff ^ string_ellipsis
-	      else
-		s
-	    in
-	      sprintf "%S#%d" s' l
-  in
-
   let value_to_label_and_links id r =
-    let t = Value.tag r in
     let max_size = context#max_size in
     let expand = context#should_expand_node r in
     let bstr b s = Buffer.add_string b s
@@ -276,8 +255,8 @@ and dump_with_formatter ?(context=default_context) fmt r =
     and brest b () = Buffer.add_string b "..."
     in
     let bprint b =
-      Buffer.add_string b (value_descr ~long:true r t);
-      match t with
+      Buffer.add_string b (Value.description r);
+      match Value.tag r with
 	| _ when Obj.tag r < Obj.no_scan_tag && expand ->
 	    let n = Obj.size r in
 	    let n' = min max_size n in
@@ -288,8 +267,7 @@ and dump_with_formatter ?(context=default_context) fmt r =
 		  brest b ()
 		else
 		  let f = Obj.field r i in
-		  let x = Value.tag f in
-		    bstr b (value_descr f x)
+		    bstr b (Value.abbrev f)
 	      done
 	| Value.Double_array when expand ->
 	    let a : float array = Obj.magic r in
