@@ -159,13 +159,13 @@ let dump_with_formatter ?(context=default_context) fmt o =
     fprintf fmt "%d" (Obj.magic r : int)
 
   and sexpr_nativeint fmt ni =
-    fprintf fmt "%nd" ni
+    fprintf fmt "%ndn" ni
 
   and sexpr_int32 fmt i32 =
-    fprintf fmt "%ld" i32
+    fprintf fmt "%ldl" i32
 
   and sexpr_int64 fmt i64 =
-    fprintf fmt "%Ld" i64
+    fprintf fmt "%LdL" i64
 
   and sexpr_addr fmt r =
     fprintf fmt "0x%nX" (Value.bits r)

@@ -233,9 +233,9 @@ let abbrev r =
     | Double       -> sprintf "%g" (Obj.magic r : float)
     | Custom       -> (
 	match custom_value r with
-	  | Custom_nativeint n -> sprintf "%nd" n
-	  | Custom_int32 i     -> sprintf "%ld" i
-	  | Custom_int64 i     -> sprintf "%Ld" i
+	  | Custom_nativeint n -> sprintf "%ndn" n
+	  | Custom_int32 i     -> sprintf "%ldl" i
+	  | Custom_int64 i     -> sprintf "%LdL" i
 	  | Custom_bigarray    -> "Bigarray"
 	  | Custom_channel     -> "Channel"
 	  | Custom_unknown     -> sprintf "%S %s" (custom_identifier r) (custom_ops_info r)

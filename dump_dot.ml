@@ -86,8 +86,7 @@ let attrs_for_value r attrs =
 	  | Value.Custom_int64 _ ->
   	      attrs_colorscheme_for_value ~lower:2 "bugn" 9 r attrs
 	  | _ ->
-	      attrs_colorscheme_for_value ~k:1.0 ~lower:5 "reds" 9 r attrs
-      )
+	      attrs_colorscheme_for_value ~k:1.0 ~lower:5 "reds" 9 r attrs )
 
     | Value.Out_of_heap
     | Value.Unaligned
