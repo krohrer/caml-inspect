@@ -24,6 +24,7 @@ object
   method node_attrs : ?root:bool -> label:string -> Obj.t -> dot_attrs
   method edge_attrs : src:Obj.t -> field:int -> dst:Obj.t -> dot_attrs
 
+  method should_inline : Obj.t -> bool
   method should_follow_edge : src:Obj.t -> field:int -> dst:Obj.t -> bool
   method max_fields_for_node : Obj.t -> int
 end
@@ -128,23 +129,22 @@ object
   method edge_attrs ~src ~field ~dst =
     [ "label", string_of_int field ]
 
-  method should_follow_edge ~src ~field ~dst =
-    match Value.tag dst with
-      | Value.Double ->
-	  false
+  method should_inline r = 
+    match Value.tag r with
       | Value.Custom -> (
-	  match Value.custom_value dst with
+	  match Value.custom_value r with
 	    | Value.Custom_nativeint _
 	    | Value.Custom_int32 _
-	    | Value.Custom_int64 _ ->
-		false
-	    | _ ->
-		true
-	)
-      | _ ->
-	  true
+	    | Value.Custom_int64 _ -> true
+	    | _                    -> false )
+      | Value.Double -> true
+      | _            -> false
 
-  method max_fields_for_node r = max_fields
+  method should_follow_edge ~src ~field ~dst =
+    true
+
+  method max_fields_for_node r =
+    max_fields
 end
 
 let default_context = make_context ()
@@ -155,15 +155,17 @@ let dump_with_formatter ?(context=default_context) fmt o =
   let queue = Queue.create () in
   let strbuf = string_with_buffer 80 in
 
-  let rec value2id = HT.create 31337
-  and id_of_value r =
-    try id_find r with Not_found -> (
-      let id = sprintf "%s_%d" (Value.mnemonic r) (HT.length value2id) in
-	HT.add value2id r id;
+  let rec value2nid = HT.create 31337
+  and node_id_of_value r =
+    try node_id_find r with Not_found -> (
+      let id = sprintf "%s_%d" (Value.mnemonic r) (HT.length value2nid) in
+	(* Make sure the node will exist. *)
+	Queue.add r queue;
+	HT.add value2nid r id;
 	id
     )
-  and id_find r =
-    HT.find value2id r
+  and node_id_find r =
+    HT.find value2nid r
   in
 
   let node_open fmt id =
@@ -200,12 +202,13 @@ let dump_with_formatter ?(context=default_context) fmt o =
       List.iter (fun (k,v) -> attr_one fmt k v) (List.rev attrs)
   in
 
-  let value_to_label_and_links id r =
+  let label_of_value id r =
     let max_fields = context#max_fields_for_node r in
     let bstr b s = Buffer.add_string b s
     and bsep b () = Buffer.add_string b "| "
     and brest b () = Buffer.add_string b "..."
     in
+
     let bprint b =
       Buffer.add_string b (Value.description r);
       match Value.tag r with
@@ -222,6 +225,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
 		    bstr b (Value.abbrev f)
 	      done
 	| Value.Double_array ->
+	    assert (Obj.tag r = Obj.double_array_tag);
 	    let a : float array = Obj.magic r in
 	    let n = Array.length a in
 	    let n' = min max_fields n in
@@ -234,6 +238,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
 		  bstr b (string_of_float a.(i))
 	      done
 	| Value.Custom | Value.Abstract ->
+	    assert (Obj.tag r = Obj.custom_tag || Obj.tag r = Obj.abstract_tag);
 	    let n = Obj.size r in
 	    let n' = min max_fields n in
 	    let cutoff = if n' = max_fields then n' - 1 else max_int in
@@ -245,6 +250,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
 		  bstr b Value.mnemonic_unknown
 	      done
 	| Value.String ->
+	    assert (Obj.tag r = Obj.string_tag);
 	    let lsub = 16 in
 	    let s : string = Obj.magic r in
 	    let l = String.length s in
@@ -262,45 +268,41 @@ let dump_with_formatter ?(context=default_context) fmt o =
 	| _ ->
 	    ()
     in
-    let links =
-      if Obj.tag r < Obj.no_scan_tag then
-	let rl = ref [] in
-	let n = Obj.size r in
-	  for i = 0 to n - 1 do
-	    let f = Obj.field r i in
-	      if Value.is_in_heap f && context#should_follow_edge ~src:r ~field:i ~dst:f then (
-		let _ = try ignore (id_find f) with Not_found -> Queue.push f queue in
-		  rl := (r, i, f) :: !rl
-	      )
-	  done;
-	  !rl
-      else
-	[]
-    in
-      strbuf bprint, links
+      strbuf bprint
   in
 
-  let rec value_one ?(root=false) fmt id r =
-    let label, links = value_to_label_and_links id r in
+  let rec dot_fields fmt id r =
+    if Obj.tag r < Obj.no_scan_tag then (
+      let n = Obj.size r in
+	for i = 0 to n - 1 do
+	  let dst = Obj.field r i and src = r in
+	  let dont_inline = not (context#should_inline dst)
+	  and do_follow = context#should_follow_edge ~src ~field:i ~dst
+	  in
+	    if dont_inline && do_follow then (
+	      (* Make sure the node will exist *)
+	      let edge_attrs = context#edge_attrs ~src ~field:i ~dst in
+	      let fid = node_id_of_value dst in
+		link_one fmt id i fid edge_attrs
+	    )
+	done
+    )
+  and dot_value ?(root=false) fmt id r =
+    let label = label_of_value id r in
     let node_attrs = context#node_attrs ~root ~label r in
-    let aux (src, i, dst) = 
-      let edge_attrs = context#edge_attrs ~src ~field:i ~dst in
-      let id = id_of_value src and fid = id_of_value dst in
-	link_one fmt id i fid edge_attrs
-    in
       node_one fmt id node_attrs;
-      List.iter aux links
+      dot_fields fmt id r
   in
+
   let r = Obj.repr o in
-  let root_id = id_of_value r in
+  let root_id = node_id_of_value r in
     fprintf fmt "@[<v>@[<v 2>digraph {@,";
     node_one fmt "graph" (("root", root_id) :: context#graph_attrs);
     node_one fmt "node" context#all_nodes_attrs;
     node_one fmt "edge" context#all_edges_attrs;
-    value_one ~root:true fmt root_id r;
     while not (Queue.is_empty queue) do
       let r = Queue.pop queue in
-	value_one fmt (id_of_value r) r
+	dot_value fmt (node_id_of_value r) r
     done;
     fprintf fmt "@]@,}@]";
     pp_print_newline fmt ()
