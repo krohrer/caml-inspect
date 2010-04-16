@@ -160,7 +160,7 @@ sig
     (** The context is used to configure the dumping process *)
 
   type follow = src:Obj.t -> field:int -> dst:Obj.t -> bool
-    (** Edge predicate *)
+    (** Edge filter predicate *)
 
   val default_context : context
     (** Context with sensible default values, used as the default
