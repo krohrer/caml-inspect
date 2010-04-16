@@ -133,7 +133,7 @@ struct
 	if exec dotcmd && exec outcmd then
 	  ()
 
-  let test_data () = sexpr_test_data ()
+  let test_data () = dot_test_data ()
 end
 
 (*----------------------------------------------------------------------------*)
