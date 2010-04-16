@@ -2,6 +2,8 @@
 
 type dot_attrs = (string * string) list
 
+type follow = src:Obj.t -> field:int -> dst:Obj.t -> bool
+
 class type context =
 object
   method graph_attrs : dot_attrs
@@ -17,6 +19,6 @@ end
 
 val default_context : context
 
-val make_context : ?max_fields:int -> unit -> context
+val make_context : ?max_fields:int -> ?follow:follow -> unit -> context
 
 val dump_with_formatter : ?context:context -> Format.formatter -> 'a -> unit

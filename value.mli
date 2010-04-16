@@ -39,7 +39,6 @@ module TagSet : sig
 end
 
 val bits : t -> nativeint
-val repr : 'a -> t
 val tag : t -> tag
 val heap_words : t -> int
 val is_in_heap : t -> bool

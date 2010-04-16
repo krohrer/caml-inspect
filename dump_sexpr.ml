@@ -57,8 +57,9 @@ let dump_with_formatter ?(context=default_context) fmt o =
 
   let rec sexpr_one body ~depth fmt r =
     if depth = 0 then (
-      (* At depth 0 we are never too deep, no mather what the (whiny)
-	 context might say. We have to consume the queue somehow. *)
+      (* At depth 0 we are never too deep, no mather what the (maybe
+	 too whiny) context might say. We HAVE TO consume the queue
+	 somehow. *)
       sexpr_open fmt (id_of_value r);
       body ();
       sexpr_close fmt ()
@@ -196,7 +197,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
   in
 
   let values = "DUMP" in
-  let r = Value.repr o in
+  let r = Obj.repr o in
     pp_open_vbox fmt 0;
     sexpr_open fmt values;
     Queue.push r queue;

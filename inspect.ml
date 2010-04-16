@@ -80,6 +80,13 @@ let rec dot_test_data () =
 
 (*----------------------------------------------------------------------------*)
 
+module Value =
+struct
+  include Value
+end
+
+(*----------------------------------------------------------------------------*)
+
 module Sexpr =
 struct
   include Dump_sexpr

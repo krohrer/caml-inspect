@@ -16,6 +16,8 @@ let (|>>) a b = b a
 
 type dot_attrs = (string * string) list
 
+type follow = src:Obj.t -> field:int -> dst:Obj.t -> bool
+
 class type context =
 object
   method graph_attrs : dot_attrs
@@ -147,7 +149,10 @@ let label_of_value context r =
   in
     string_with_buffer 20 bprint
 
-let make_context ?(max_fields=5) () =
+let follow_all ~src ~field ~dst =
+  true
+
+let make_context ?(max_fields=5) ?(follow=follow_all) () =
 object(self)
 
   method graph_attrs =
@@ -198,7 +203,7 @@ object(self)
       | _            -> false
 
   method should_follow_edge ~src ~field ~dst =
-    true
+    follow ~src ~field ~dst
 
   method max_fields_for_node r =
     max_fields

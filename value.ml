@@ -33,8 +33,6 @@ type custom =
   | Custom_unknown
   | Not_custom
 
-let repr = Obj.repr
-
 external bits : t -> nativeint = "inspect_bits"
 
 external custom_identifier : t -> string = "inspect_custom_id"
@@ -87,7 +85,7 @@ end
 
 (* Make sure the known custom identifiers are in sync. *)
 let _ =
-  let rnat = repr 0n and ri32 = repr 0l and ri64 = repr 0L in
+  let rnat = Obj.repr 0n and ri32 = Obj.repr 0l and ri64 = Obj.repr 0L in
     assert (Obj.tag rnat = Obj.custom_tag);
     assert (Obj.tag ri32 = Obj.custom_tag);
     assert (Obj.tag ri64 = Obj.custom_tag);
@@ -95,7 +93,7 @@ let _ =
     assert (int32_id = custom_identifier ri32);
     assert (int64_id = custom_identifier ri64);
     (* assert (bigarray_id = custom_identifier ...); *)
-    assert (channel_id = custom_identifier (repr stdout));
+    assert (channel_id = custom_identifier (Obj.repr stdout));
     ()
 
 let custom_value r =
