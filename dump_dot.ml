@@ -203,10 +203,17 @@ let dump_with_formatter ?(context=default_context) fmt o =
   in
 
   let label_of_value id r =
-    let max_fields = context#max_fields_for_node r in
-    let bstr b s = Buffer.add_string b s
-    and bsep b () = Buffer.add_string b "| "
-    and brest b () = Buffer.add_string b "..."
+    let bprint_fields b n bf =
+      let max_fields = context#max_fields_for_node r in
+      let n' = min max_fields n in
+      let cutoff = if n' = max_fields then n' - 1 else max_int in
+	for i = 0 to n' - 1 do
+	  Buffer.add_string b "| ";
+	  if i = cutoff then
+	    Buffer.add_string b "..."
+	  else
+	    Buffer.add_string b (bf i)
+	done
     in
 
     let bprint b =
@@ -214,57 +221,32 @@ let dump_with_formatter ?(context=default_context) fmt o =
       match Value.tag r with
 	| _ when Obj.tag r < Obj.no_scan_tag ->
 	    let n = Obj.size r in
-	    let n' = min max_fields n in
-	    let cutoff = if n' = max_fields then n' - 1 else max_int in
-	      for i = 0 to n' - 1 do
-		bsep b ();
-		if i = cutoff then
-		  brest b ()
-		else
-		  let f = Obj.field r i in
-		    bstr b (Value.abbrev f)
-	      done
+	      bprint_fields b n (fun i -> Value.abbrev (Obj.field r i))
+
 	| Value.Double_array ->
 	    assert (Obj.tag r = Obj.double_array_tag);
 	    let a : float array = Obj.magic r in
 	    let n = Array.length a in
-	    let n' = min max_fields n in
-	    let cutoff = if n' = max_fields then n' - 1 else max_int in
-	      for i = 0 to n' - 1 do
-		bsep b ();
-		if i = cutoff then
-		  brest b ()
-		else
-		  bstr b (string_of_float a.(i))
-	      done
+	      bprint_fields b n (fun i -> string_of_float a.(i))
+
 	| Value.Custom | Value.Abstract ->
 	    assert (Obj.tag r = Obj.custom_tag || Obj.tag r = Obj.abstract_tag);
 	    let n = Obj.size r in
-	    let n' = min max_fields n in
-	    let cutoff = if n' = max_fields then n' - 1 else max_int in
-	      for i = 0 to n' - 1 do
-		bsep b ();
-		if i = cutoff then
-		  brest b ()
-		else
-		  bstr b Value.mnemonic_unknown
-	      done
+	      bprint_fields b n (fun _ -> Value.mnemonic_unknown)
+
 	| Value.String ->
 	    assert (Obj.tag r = Obj.string_tag);
-	    let lsub = 16 in
+	    let lsub = Sys.word_size / 8 in
 	    let s : string = Obj.magic r in
 	    let l = String.length s in
-	    let n' = min max_fields ((l + lsub - 1) / lsub) in
-	    let cutoff = if n' = max_fields then n' - 1 else max_int in
-	      for i = 0 to n' - 1 do
-		bsep b ();
-		if i = cutoff then
-		  brest b ()
-		else
+	    let n = (l + lsub - 1) / lsub in
+	      bprint_fields b n (
+		fun i -> 
 		  let isub = i * 16 in
-		  let len = min (String.length s - isub) lsub in
-		    bprintf b "%S" (String.sub s isub len)
-	      done
+		  let len = min (l - isub) lsub in
+		    sprintf "%S" (String.sub s isub len)
+	      )
+
 	| _ ->
 	    ()
     in
