@@ -137,6 +137,9 @@ object
 	    | Value.Custom_int32 _
 	    | Value.Custom_int64 _ -> true
 	    | _                    -> false )
+      | Value.Int
+      | Value.Unaligned
+      | Value.Out_of_heap
       | Value.Double -> true
       | _            -> false
 
@@ -236,15 +239,19 @@ let dump_with_formatter ?(context=default_context) fmt o =
 
 	| Value.String ->
 	    assert (Obj.tag r = Obj.string_tag);
-	    let lsub = Sys.word_size / 8 in
+	    let nbytes = Sys.word_size / 8 in 
+	    let lsub = nbytes in
 	    let s : string = Obj.magic r in
 	    let l = String.length s in
 	    let n = (l + lsub - 1) / lsub in
 	      bprint_fields b n (
 		fun i -> 
-		  let isub = i * 16 in
+		  let isub = i * nbytes in
 		  let len = min (l - isub) lsub in
-		    sprintf "%S" (String.sub s isub len)
+		    if l <= isub + nbytes then 
+		      sprintf "%S" (String.sub s isub len)
+		    else
+		      sprintf "%S..." (String.sub s isub len)
 	      )
 
 	| _ ->
