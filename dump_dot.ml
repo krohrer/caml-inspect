@@ -24,9 +24,8 @@ object
   method node_attrs : ?root:bool -> label:string -> Obj.t -> dot_attrs
   method edge_attrs : src:Obj.t -> field:int -> dst:Obj.t -> dot_attrs
 
-  method should_expand_node : Obj.t -> bool
   method should_follow_edge : src:Obj.t -> field:int -> dst:Obj.t -> bool
-  method max_fields : int
+  method max_fields_for_node : Obj.t -> int
 end
 
 (*----------------------------------------------------------------------------*)
@@ -129,7 +128,6 @@ object
   method edge_attrs ~src ~field ~dst =
     [ "label", string_of_int field ]
 
-  method should_expand_node r = true
   method should_follow_edge ~src ~field ~dst =
     match Value.tag dst with
       | Value.Double ->
@@ -146,7 +144,7 @@ object
       | _ ->
 	  true
 
-  method max_fields = max_fields
+  method max_fields_for_node r = max_fields
 end
 
 let default_context = make_context ()
@@ -203,8 +201,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
   in
 
   let value_to_label_and_links id r =
-    let max_fields = context#max_fields in
-    let expand = context#should_expand_node r in
+    let max_fields = context#max_fields_for_node r in
     let bstr b s = Buffer.add_string b s
     and bsep b () = Buffer.add_string b "| "
     and brest b () = Buffer.add_string b "..."
@@ -212,7 +209,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
     let bprint b =
       Buffer.add_string b (Value.description r);
       match Value.tag r with
-	| _ when Obj.tag r < Obj.no_scan_tag && expand ->
+	| _ when Obj.tag r < Obj.no_scan_tag ->
 	    let n = Obj.size r in
 	    let n' = min max_fields n in
 	    let cutoff = if n' = max_fields then n' - 1 else max_int in
@@ -224,7 +221,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
 		  let f = Obj.field r i in
 		    bstr b (Value.abbrev f)
 	      done
-	| Value.Double_array when expand ->
+	| Value.Double_array ->
 	    let a : float array = Obj.magic r in
 	    let n = Array.length a in
 	    let n' = min max_fields n in
@@ -236,7 +233,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
 		else
 		  bstr b (string_of_float a.(i))
 	      done
-	| Value.Custom | Value.Abstract when expand ->
+	| Value.Custom | Value.Abstract ->
 	    let n = Obj.size r in
 	    let n' = min max_fields n in
 	    let cutoff = if n' = max_fields then n' - 1 else max_int in
@@ -247,7 +244,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
 		else
 		  bstr b Value.mnemonic_unknown
 	      done
-	| Value.String when expand ->
+	| Value.String ->
 	    let lsub = 16 in
 	    let s : string = Obj.magic r in
 	    let l = String.length s in
@@ -266,7 +263,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
 	    ()
     in
     let links =
-      if Obj.tag r < Obj.no_scan_tag && expand then
+      if Obj.tag r < Obj.no_scan_tag then
 	let rl = ref [] in
 	let n = Obj.size r in
 	  for i = 0 to n - 1 do

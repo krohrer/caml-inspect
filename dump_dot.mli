@@ -10,9 +10,8 @@ object
   method node_attrs : ?root:bool -> label:string -> Obj.t -> dot_attrs
   method edge_attrs : src:Obj.t -> field:int -> dst:Obj.t -> dot_attrs
 
-  method should_expand_node : Obj.t -> bool
   method should_follow_edge : src:Obj.t -> field:int -> dst:Obj.t -> bool
-  method max_fields : int
+  method max_fields_for_node : Obj.t -> int
 end
 
 val default_context : context
