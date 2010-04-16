@@ -21,7 +21,7 @@ object
   method graph_attrs : dot_attrs
   method all_nodes_attrs : dot_attrs
   method all_edges_attrs : dot_attrs
-  method node_attrs : ?root:bool -> label:string -> Obj.t -> dot_attrs
+  method node_attrs : ?root:bool -> Obj.t -> dot_attrs
   method edge_attrs : src:Obj.t -> field:int -> dst:Obj.t -> dot_attrs
 
   method should_inline : Obj.t -> bool
@@ -94,8 +94,62 @@ let attrs_for_value r attrs =
     | Value.Custom ->
 	attrs_colorscheme_for_value ~k:1.0 ~lower:5 "reds" 9 r attrs
 
+let label_of_value context r =
+  let bprint_fields b n bf =
+    let max_fields = context#max_fields_for_node r in
+    let n' = min max_fields n in
+    let cutoff = if n' = max_fields then n' - 1 else max_int in
+      for i = 0 to n' - 1 do
+	Buffer.add_string b "| ";
+	if i = cutoff then
+	  Buffer.add_string b "..."
+	else
+	  Buffer.add_string b (bf i)
+      done
+  in
+  let bprint b =
+    Buffer.add_string b (Value.description r);
+    match Value.tag r with
+      | _ when Obj.tag r < Obj.no_scan_tag ->
+	  let n = Obj.size r in
+	    bprint_fields b n (fun i -> Value.abbrev (Obj.field r i))
+
+      | Value.Double_array ->
+	  assert (Obj.tag r = Obj.double_array_tag);
+	  let a : float array = Obj.magic r in
+	  let n = Array.length a in
+	    bprint_fields b n (fun i -> string_of_float a.(i))
+
+      | Value.Custom | Value.Abstract ->
+	  assert (Obj.tag r = Obj.custom_tag || Obj.tag r = Obj.abstract_tag);
+	  let n = Obj.size r in
+	    bprint_fields b n (fun _ -> Value.mnemonic_unknown)
+
+      | Value.String ->
+	  assert (Obj.tag r = Obj.string_tag);
+	  let nbytes = Sys.word_size / 8 in 
+	  let lsub = nbytes in
+	  let s : string = Obj.magic r in
+	  let l = String.length s in
+	  let n = (l + lsub - 1) / lsub in
+	    bprint_fields b n (
+	      fun i -> 
+		let isub = i * nbytes in
+		let len = min (l - isub) lsub in
+		  if l <= isub + nbytes then 
+		    sprintf "%S" (String.sub s isub len)
+		  else
+		    sprintf "%S..." (String.sub s isub len)
+	    )
+
+      | _ ->
+	  ()
+  in
+    string_with_buffer 20 bprint
+
 let make_context ?(max_fields=5) () =
-object
+object(self)
+
   method graph_attrs =
     [
       "rankdir", "LR";
@@ -117,14 +171,14 @@ object
       "arrowtail", "odot"
     ]
 
-  method node_attrs ?(root=false) ~label r =
+  method node_attrs ?(root=false) r =
     let attrs_for_root attrs = 
       if root then
 	(* ("fontcolor", "#ff0000") :: *) ("penwidth", "8.0") :: attrs
       else
 	attrs
     in
-      ["label", label] |>> attrs_for_value r |>> attrs_for_root
+      [ "label", label_of_value self r ] |>> attrs_for_value r |>> attrs_for_root
 
   method edge_attrs ~src ~field ~dst =
     [ "label", string_of_int field ]
@@ -156,7 +210,6 @@ let default_context = make_context ()
 
 let dump_with_formatter ?(context=default_context) fmt o =
   let queue = Queue.create () in
-  let strbuf = string_with_buffer 80 in
 
   let rec value2nid = HT.create 31337
   and node_id_of_value r =
@@ -205,61 +258,6 @@ let dump_with_formatter ?(context=default_context) fmt o =
       List.iter (fun (k,v) -> attr_one fmt k v) (List.rev attrs)
   in
 
-  let label_of_value id r =
-    let bprint_fields b n bf =
-      let max_fields = context#max_fields_for_node r in
-      let n' = min max_fields n in
-      let cutoff = if n' = max_fields then n' - 1 else max_int in
-	for i = 0 to n' - 1 do
-	  Buffer.add_string b "| ";
-	  if i = cutoff then
-	    Buffer.add_string b "..."
-	  else
-	    Buffer.add_string b (bf i)
-	done
-    in
-
-    let bprint b =
-      Buffer.add_string b (Value.description r);
-      match Value.tag r with
-	| _ when Obj.tag r < Obj.no_scan_tag ->
-	    let n = Obj.size r in
-	      bprint_fields b n (fun i -> Value.abbrev (Obj.field r i))
-
-	| Value.Double_array ->
-	    assert (Obj.tag r = Obj.double_array_tag);
-	    let a : float array = Obj.magic r in
-	    let n = Array.length a in
-	      bprint_fields b n (fun i -> string_of_float a.(i))
-
-	| Value.Custom | Value.Abstract ->
-	    assert (Obj.tag r = Obj.custom_tag || Obj.tag r = Obj.abstract_tag);
-	    let n = Obj.size r in
-	      bprint_fields b n (fun _ -> Value.mnemonic_unknown)
-
-	| Value.String ->
-	    assert (Obj.tag r = Obj.string_tag);
-	    let nbytes = Sys.word_size / 8 in 
-	    let lsub = nbytes in
-	    let s : string = Obj.magic r in
-	    let l = String.length s in
-	    let n = (l + lsub - 1) / lsub in
-	      bprint_fields b n (
-		fun i -> 
-		  let isub = i * nbytes in
-		  let len = min (l - isub) lsub in
-		    if l <= isub + nbytes then 
-		      sprintf "%S" (String.sub s isub len)
-		    else
-		      sprintf "%S..." (String.sub s isub len)
-	      )
-
-	| _ ->
-	    ()
-    in
-      strbuf bprint
-  in
-
   let rec dot_fields fmt id r =
     if Obj.tag r < Obj.no_scan_tag then (
       let n = Obj.size r in
@@ -277,8 +275,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
 	done
     )
   and dot_value ?(root=false) fmt id r =
-    let label = label_of_value id r in
-    let node_attrs = context#node_attrs ~root ~label r in
+    let node_attrs = context#node_attrs ~root r in
       node_one fmt id node_attrs;
       dot_fields fmt id r
   in

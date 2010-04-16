@@ -7,7 +7,7 @@ object
   method graph_attrs : dot_attrs
   method all_nodes_attrs : dot_attrs
   method all_edges_attrs : dot_attrs
-  method node_attrs : ?root:bool -> label:string -> Obj.t -> dot_attrs
+  method node_attrs : ?root:bool -> Obj.t -> dot_attrs
   method edge_attrs : src:Obj.t -> field:int -> dst:Obj.t -> dot_attrs
 
   method should_inline : Obj.t -> bool
