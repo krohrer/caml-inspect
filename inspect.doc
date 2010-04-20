@@ -52,11 +52,11 @@ standard-library gives the definition of all the possible block
 tags. Structured blocks have tag values lower than [Obj.no_scan_tag], while
 raw blocks have tags equal or greater than [Obj.no_scan_tag].
 
-{4 The Different Kinds of Blocks}
+{4 Structured and Unstructured Blocks}
 
-The section on {Interfacing C with Objective Caml} in the {e OCaml
-manual} describes the following types of blocks, as indicated by the
-tag the header for each block. (see [Obj.tag]).
+The chapter on {Interfacing C with Objective Caml} in the {e OCaml
+manual} describes the following types of blocks. The type of a block
+is its tag, which is stored in the block header. (see [Obj.tag]).
 
 - [0] to [Obj.no_scan_tag-1], A structured block (an array of Caml
 objects). Each field is a value.
@@ -92,7 +92,7 @@ runtime-system to implement lazy-evaulation.
 - [Obj.infix_tag]: A special block contained within a closure block, used only
 by the GC.
 
-{4 Representation of OCaml types}
+{4 Representation of OCaml Values}
 
 This section is only a summary of the most important things.  The
 chapter on {e Interfacing C with Objective Caml} in the {OCaml manual}
@@ -148,10 +148,10 @@ their actual representation.
 
 {2 References}
 
-{{:Graphviz} Graph Visualization Software}
+Graphviz, Graph Visualization Software
 {{:http://www.graphviz.org/}http://www.graphviz.org/}
 
-{{:Manual} The Objective Caml system (release 3.11), Documentation and user's manual}
+The Objective Caml system (release 3.11), Documentation and user's manual
 {{:http://caml.inria.fr/pub/docs/manual-ocaml/}http://caml.inria.fr/pub/docs/manual-ocaml/}
 
 
