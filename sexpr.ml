@@ -1,8 +1,11 @@
 (* Kaspar Rohrer, Wed Apr 14 13:46:21 CEST 2010 *)
 
-open Format
-
 module HT = Hashtbl.Make(Value)
+
+open Format
+open Aux
+
+(*----------------------------------------------------------------------------*)
 
 class type context =
 object
@@ -208,3 +211,50 @@ let dump_with_formatter ?(context=default_context) fmt o =
     done;
     sexpr_close fmt ();
     pp_close_box fmt ()
+
+(*----------------------------------------------------------------------------*)
+
+let dump ?context o =
+  let fmt = Format.std_formatter in
+    dump_with_formatter ?context fmt o
+
+let dump_to_out_channel ?context outc o =
+  let fmt = Format.formatter_of_out_channel outc in
+    dump_with_formatter ?context fmt o
+
+let dump_to_file ?context filename o =
+  with_file_out_channel filename (fun outc -> dump_to_out_channel ?context outc o)
+
+(*----------------------------------------------------------------------------*)
+
+exception TestException of string * int
+  
+let rec test_data () =
+  let rec l = 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: l in
+  let rec drop l i =
+    if i = 0 then
+      l
+    else
+      drop (List.tl l) (i - 1)
+  in
+  let rec f x =
+    l
+  and g y =
+    f (y :: l)
+  in
+  let o = object
+    val brog = 4
+    val brag = 51251
+    method blah = 3 
+    method foo () a = a
+  end in
+  let data = 
+    ([|1|], l, (1,2), [|3; 4|], flush, 1.0, [|2.0; 3.0|],
+     TestException ("TestException", -1),
+     ("Hello world", lazy (3 + 5)), g, f, let s = "STRING" in (s, "STRING", s),
+     Array.init 20 (drop l),
+     stdout, Format.printf, (o, default_context))
+  in
+    Obj.repr data
+
+(*----------------------------------------------------------------------------*)

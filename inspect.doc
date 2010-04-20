@@ -1,36 +1,157 @@
 This small library can be used to inspect arbitrary OCaml values,
 either by dumping the object graph as pretty printed S-expressions
 with references and sharing, or by generating output in the
-DOT-language to be further processed by Graphviz. This functionality
+DOT-language to be further processed by {e Graphviz}. This functionality
 is provided by the {!module: Sexpr} and {!module: Dot} sub-modules.
 
 {!indexlist}
-{!modules: Value Sexpr Dot}
+{!modules: Value Sexpr Dot Aux}
 
-{2 Dumping S-Expressions}
+{2 Low-level Representation of OCaml Values}
 
-Context objects are used to configure the dumping process, and
-sensible default contexts are already provided in the respective sub
-modules.
+OCaml values all share a common low-level representation and in
+contrast to dynamically typed languages, it is usually not possible to
+infer the type of a value from the low-level representation. This is
+not really an issue, because OCaml is statically typed after all. So
+except for some trickery with [Obj.magic], it is simply not possible
+to apply a function to a value of the wrong type.
 
-{2 Dumping Graphviz DOT}
+{3 The Value Type}
 
-If you are on OS X and have Graphviz installed, you can try the
-[Inspect.Dot.dump_command] function to dump directly to a temporary
-PDF file, which will then be opened in Preview.
+The basic building block that is used by the runtime-system to
+represent any value in the OCaml universe is the value type. Values
+are always word-sized. Depending on the architecture, a word is either
+32 or 64 bits wide. (see [Sys.word_size])
 
+A value is either a pointer to a block of values in the OCaml heap, a
+pointer to an object outside of the heap, or an unboxed
+integer. Naturally, blocks in the heap are garbage-collected.
 
+The runtime-system uses the least-significant bit of a value to
+distinguish between unboxed integers and pointers. If the LSB is set,
+the value is unboxed. Conversely, if the LSB is cleared, the value is
+a pointer to some other region of memory. This explains why the int
+type in OCaml is only 31 bits wide (63 bits wide on 64 bit
+platforms). It also means that the pointers can not address individual
+bytes in memory.
 
+Because blocks in the heap are garbage-collected, they have strict
+structure constraints. Each block includes a header. Stored in the
+header is the size of the block (in words) and a tag, which describes
+the kind of data the block contains. Basically, there are two types of
+blocks:
 
+- Structured blocks may only contain well-formed values, as they are
+  recursively traversed by the garbage collector.
 
-{1 World}
-{2 Section 2}
-{3 the good, the bad, the ugly}
-{4 lights}
-{5 is more than four}
-{6 Hello world}
-{7 deadly sins}
-{8 I ate a hamburger}
-{9 Section 9}
+- Raw blocks are not scanned by the garbage collector, and can thus
+  contain arbitrary values.
+
+The {b caml/mlvalues.h} header-file in the directory of the
+standard-library gives the definition of all the possible block
+tags. Structured blocks have tag values lower than [Obj.no_scan_tag], while
+raw blocks have tags equal or greater than [Obj.no_scan_tag].
+
+{4 The Different Kinds of Blocks}
+
+The section on {Interfacing C with Objective Caml} in the {e OCaml
+manual} describes the following types of blocks, as indicated by the
+tag the header for each block. (see [Obj.tag]).
+
+- [0] to [Obj.no_scan_tag-1], A structured block (an array of Caml
+objects). Each field is a value.
+
+- [Obj.closure_tag]: A closure representing a functional value. The first
+word is a pointer to a piece of code, the remaining words are value
+containing the environment.
+
+- [Obj.string_tag]: A character string.
+
+- [Obj.double_tag]: A double-precision floating-point number.
+
+- [Obj.double_array_tag]: An array or record of double-precision
+floating-point numbers.
+
+- [Obj.abstract_tag]: A block representing an abstract datatype.
+
+- [Obj.custom_tag]: A block representing an abstract datatype with
+user-defined finalization, comparison, hashing, serialization and
+deserialization functions atttached.
+
+There are a few more structured block types which are not directly
+described in the {e manual}.
+
+- [Obj.object_tag]: A structured block representing an object. The first
+  field is a value that describes the class of the object. The second
+  field is a unique object id (see [Oo.id]). The rest of the block
+  represents the variables of the object.
+
+- [Obj.lazy_tag], [Obj.forward_tag]: These two block types are used by the
+runtime-system to implement lazy-evaulation.
+
+- [Obj.infix_tag]: A special block contained within a closure block, used only
+by the GC.
+
+{4 Representation of OCaml types}
+
+This section is only a summary of the most important things.  The
+chapter on {e Interfacing C with Objective Caml} in the {OCaml manual}
+gives a much better explanation over the translation of OCaml types to
+their actual representation.
+
+{ul
+{li {b Atomic types}
+    {ul
+    {li {b [int]}: Unboxed integer values.}
+    {li {b [char]}: Unboxed integer values (ASCII code).}
+    {li {b [float]}: Blocks with tag [Obj.double_tag].}
+    {li {b [string]}: Blocks with tag [Obj.string_tag].}
+    {li {b [int32]/[int64]/[nativeint]}: Blocks with [Obj.custom_tag].}
+    }}
+{li {b Tuples and records}: Blocks with tag 0.}
+{li {b Arrays} Blocks with tag 0.}
+{li {b Arrays and records of floats}: Blocks with tag [Obj.double_array_tag]}
+{li {b Concrete types}
+    {ul
+    {li {b Constant constructors}: Represented by unboxed integers, first declared constant constructor is 0.}
+    {li {b Non-constant constructors}:
+    	Blocks with a tag lower than [Obj.no_scan_tag] that encodes the constructor, starting at 0}.
+    {li {b E.g. [type t = A | B of int | C | D of int * string]}
+    	{ul
+	{li [Obj.repr A = Obj.repr 0]}
+	{li [Obj.repr C = Obj.repr 1]}
+	{li [let r = Obj.repr (B 1) in Obj.is_block r && Obj.tag r = 0]}
+	{li [let r = Obj.repr (D (1,"Str")) in Obj.is_block r && Obj.tag r = 1]}
+	}}
+    {li {b [bool]}
+    	{ul
+	{li [Obj.repr false = Obj.repr 0]}
+	{li [Obj.repr true == Obj.repr 1]}
+	}}
+    {li {b [unit]}
+    	{ul
+	{li [Obj.repr () == Obj.repr 0]}
+	}}
+    {li {b ['a list]}
+    	{ul
+	{li [Obj.repr [] == Obj.repr 0]}
+        {li [h::t]: Block with tag 0 and size 2. First field is [h], second field [t].}
+	}}
+    }}
+{li {b Objects}: Blocks with tag [Obj.object_tag]. The first field refers to the class of the object and its assosicated method suite. The second field contains a unique object ID. The remaining fields are the instance variables of the object.}
+{li {b Variants}: Variants are similar to constructed terms. There are a few differences however.
+    {ul
+    {li Variant constructors are identified by their hash value.}
+    {li Non-constant variant constructors are not flattened. They are always blocks of size 2, where the first field is the hash. The second field can either contain a single value, or a pointer to another structured block (just like a tuple).
+    }}
+}}
+
+{2 References}
+
+{{:Graphviz} Graph Visualization Software}
+{{:http://www.graphviz.org/}http://www.graphviz.org/}
+
+{{:Manual} The Objective Caml system (release 3.11), Documentation and user's manual}
+{{:http://caml.inria.fr/pub/docs/manual-ocaml/}http://caml.inria.fr/pub/docs/manual-ocaml/}
 
 

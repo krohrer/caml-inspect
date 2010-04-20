@@ -2,21 +2,14 @@
 
 module HT = Hashtbl.Make(Value)
 
-let string_with_buffer n =
-  let b = Buffer.create n in
-    ( fun f ->
-	Buffer.clear b;
-	f b;
-	Buffer.contents b
-    )
-
 open Format
-
-let (|>>) a b = b a
+open Aux
 
 type dot_attrs = (string * string) list
 
 type follow = src:Obj.t -> field:int -> dst:Obj.t -> bool
+
+(*----------------------------------------------------------------------------*)
 
 class type context =
 object
@@ -30,8 +23,6 @@ object
   method should_follow_edge : src:Obj.t -> field:int -> dst:Obj.t -> bool
   method max_fields_for_node : Obj.t -> int
 end
-
-(*----------------------------------------------------------------------------*)
 
 (* See http://www.graphviz.org/doc/info/colors.html for more info. *)
 
@@ -147,7 +138,7 @@ let label_of_value context r =
       | _ ->
 	  ()
   in
-    string_with_buffer 20 bprint
+    with_buffer 20 bprint
 
 let follow_all ~src ~field ~dst =
   true
@@ -297,5 +288,75 @@ let dump_with_formatter ?(context=default_context) fmt o =
     done;
     fprintf fmt "@]@,}@]";
     pp_print_newline fmt ()
+
+(*----------------------------------------------------------------------------*)
+
+let dump ?context o =
+  let fmt = Format.std_formatter in
+    dump_with_formatter ?context fmt o
+
+let dump_to_out_channel ?context outc o =
+  let fmt = Format.formatter_of_out_channel outc in
+    dump_with_formatter ?context fmt o
+
+let dump_to_file ?context filename o =
+  with_file_out_channel filename (fun outc -> dump_to_out_channel ?context outc o)
+
+let dump_osx ?context ?(cmd="dot") ?(format="pdf") o =
+  let exec cmd =
+    if Sys.command cmd <> 0 then (
+      Printf.eprintf "OCaml Inspect: Could not execute command: %s" cmd;
+      false
+    )
+    else
+      true
+  in      
+  let basename = Filename.temp_file "camldump" "." in
+  let dotfile = basename ^ "dot" in
+  let outfile = basename ^ format in
+    dump_to_file ?context dotfile o;
+    let dotcmd = sprintf "%S -T%s -o %S %S" cmd format outfile dotfile in
+    let outcmd = sprintf "open %S" outfile in
+      if exec dotcmd && exec outcmd then
+	()
+
+(*----------------------------------------------------------------------------*)
+
+exception TestException of string * int
+
+let rec test_data () =
+  let rec l = 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: l in
+  let rec drop l i =
+    if i = 0 then
+      l
+    else
+      drop (List.tl l) (i - 1)
+  in
+  let rec f x =
+    l
+  and g y =
+    f (y :: l)
+  in
+  let o = object
+    val brog = 4
+    val brag = 51251
+    method blah = 3 
+    method foo () a = a
+  end in
+  let data = 
+    ([|1|], l, (1,2), [|3; 4|], flush, 1.0, [|2.0; 3.0|],
+     TestException ("TestException", -1),
+     String.make 1000000 'a',
+     ("Hello world", lazy (3 + 5)), g, f, let s = "STRING" in (s, "STRING", s),
+     Array.init 20 (drop l),
+     stdout, Format.printf, (o, default_context),
+     [String.make 10 'a'; String.make 100 'a'; String.make 1000 'a'; String.make 10000000 'a'],
+    [Array.make 1 1; Array.make 4 4; Array.make 16 16; Array.make 64 64; Array.make 256 256;
+     Array.make 1024 1024; Array.make 1000000 0],
+    [Array.make 1 1.; Array.make 4 4.; Array.make 16 16.; Array.make 64 64.; Array.make 256 256.;
+     Array.make 1024 1024.; Array.make 1000000 0.]
+    )
+  in
+    Obj.repr data
 
 (*----------------------------------------------------------------------------*)

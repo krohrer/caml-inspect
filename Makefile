@@ -8,10 +8,10 @@ LIB_PACK_NAME = inspect
 
 OCAMLDOCFLAGS = -intro inspect.doc -t CAML-Inspect
 
-SOURCES = value.mli value.ml value_cimpl.c dot.mli dot.ml sexpr.mli sexpr.ml
+SOURCES = aux.mli aux.ml value.mli value.ml value_cimpl.c dot.mli dot.ml sexpr.mli sexpr.ml
 
 DOC_DIR = doc
-DOC_FILES = value.mli dot.mli sexpr.mli
+DOC_FILES = aux.mli value.mli dot.mli sexpr.mli
 
 RESULT = inspect
 

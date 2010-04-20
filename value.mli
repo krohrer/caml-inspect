@@ -78,7 +78,7 @@ val heap_words : t -> int
 val is_in_heap : t -> bool
   (** [Int], [Out_of_heap] and [Unaligned] are out. *)
 
-(** {6 Custom Values} *)
+(** {6 Custom Blocks} *)
 
 val custom_identifier : t -> string
   (** Returns the identifier of the custom block  *)
