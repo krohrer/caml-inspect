@@ -29,17 +29,16 @@ integer. Naturally, blocks in the heap are garbage-collected.
 
 The runtime-system uses the least-significant bit of a value to
 distinguish between unboxed integers and pointers. If the LSB is set,
-the value is unboxed. Conversely, if the LSB is cleared, the value is
-a pointer to some other region of memory. This explains why the int
+the value is unboxed. If the LSB is cleared, the value is a pointer to
+some other region of memory. This encoding also explains why the int
 type in OCaml is only 31 bits wide (63 bits wide on 64 bit
-platforms). It also means that the pointers can not address individual
-bytes in memory.
+platforms).
 
 Because blocks in the heap are garbage-collected, they have strict
-structure constraints. Each block includes a header. Stored in the
-header is the size of the block (in words) and a tag, which describes
-the kind of data the block contains. Basically, there are two types of
-blocks:
+structure constraints. Information like the tag of a block and its
+size (in words) is stored encoded in the header of each block.
+
+There are two categories of blocks with respect to the garbage collector:
 
 - Structured blocks may only contain well-formed values, as they are
   recursively traversed by the garbage collector.
@@ -95,7 +94,7 @@ by the GC.
 {4 Representation of OCaml Values}
 
 This section is only a summary of the most important things.  The
-chapter on {e Interfacing C with Objective Caml} in the {OCaml manual}
+chapter on {e Interfacing C with Objective Caml} in the {e OCaml manual}
 gives a much better explanation over the translation of OCaml types to
 their actual representation.
 
