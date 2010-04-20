@@ -18,7 +18,6 @@ DOC_FILES = aux.mli value.mli dot.mli sexpr.mli
 RESULT = inspect
 
 all:ncl bcl htdoc
-	open $(DOC_DIR)/$(RESULT)/html/index.html
 
 LIBINSTALL_FILES = aux.mli value.mli dot.mli sexpr.mli aux.cmi value.cmi dot.cmi sexpr.cmi inspect.cmi inspect.cma inspect.cmxa	inspect.a libinspect_stubs.a dllinspect_stubs.so
 
