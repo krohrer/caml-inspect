@@ -50,3 +50,10 @@ And to uninstall it
 For development, you may instead run
 
 > sudo ln -s `pwd` `ocamlfind printconf path`/inspect
+
+Usage:
+------
+
+For more information, you should build and view the documentation.
+
+> make htdoc
