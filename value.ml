@@ -250,7 +250,7 @@ let description r =
     | Object       -> "Object: #" ^ string_of_int (Obj.size r)
     | Infix        -> "Infix: #" ^ string_of_int (Obj.size r)
     | Forward      -> "Forward: #" ^ string_of_int (Obj.size r)
-    | Block        -> sprintf "Block[%d]: #%d" (Obj.tag r) (Obj.size r)
+    | Block        -> sprintf "Block(%d): #%d" (Obj.tag r) (Obj.size r)
     | Abstract     -> "Abstract: #" ^ string_of_int (Obj.size r)
     | String       -> sprintf "String: %d chars" (String.length (Obj.magic r : string))
     | Double       -> sprintf "Double: %g" (Obj.magic r : float)

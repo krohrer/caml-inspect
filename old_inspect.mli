@@ -1,22 +1,5 @@
 (* Kaspar Rohrer, Wed Apr 14 14:52:25 CEST 2010 *)
 
-(** Inspection of internal value representations and the object graph.
-
-    This small library can be used to inspect arbitrary OCaml values,
-    either by dumping the object graph as pretty printed S-expressions
-    with references and sharing, or by generating output in the
-    DOT-language to be further processed by Graphviz. This
-    functionality is provided by the [Sexpr] and [Dot] sub-modules.
-
-    Context objects are used to configure the dumping process, and
-    sensible default contexts are already provided in the respective
-    sub modules.
-
-    If you are on OS X and have Graphviz installed, you can try the
-    [Inspect.Dot.dump_command] function to dump directly to a
-    temporary PDF file, which will then be opened in Preview.
-*)
-
 val count_heap_words_and_objects : 'a -> int * int
   (** Count the number of words the object graph occupies in the OCaml
       value heap, and the number of distinct nodes. The size of a word

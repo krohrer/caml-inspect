@@ -1,0 +1,36 @@
+This small library can be used to inspect arbitrary OCaml values,
+either by dumping the object graph as pretty printed S-expressions
+with references and sharing, or by generating output in the
+DOT-language to be further processed by Graphviz. This functionality
+is provided by the {!module: Sexpr} and {!module: Dot} sub-modules.
+
+{!indexlist}
+{!modules: Value Sexpr Dot}
+
+{2 Dumping S-Expressions}
+
+Context objects are used to configure the dumping process, and
+sensible default contexts are already provided in the respective sub
+modules.
+
+{2 Dumping Graphviz DOT}
+
+If you are on OS X and have Graphviz installed, you can try the
+[Inspect.Dot.dump_command] function to dump directly to a temporary
+PDF file, which will then be opened in Preview.
+
+
+
+
+
+{1 World}
+{2 Section 2}
+{3 the good, the bad, the ugly}
+{4 lights}
+{5 is more than four}
+{6 Hello world}
+{7 deadly sins}
+{8 I ate a hamburger}
+{9 Section 9}
+
+
