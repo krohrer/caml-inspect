@@ -41,11 +41,11 @@ to generate the library and documentation.
 
 To install the library using findlib, simply type
 
-> make libinstall
+> make install
 
 And to uninstall it
 
-> make libuninstall
+> make uninstall
 
 For development, you may instead run
 

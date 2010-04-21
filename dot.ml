@@ -120,7 +120,7 @@ let label_of_value context r =
 
       | Value.String ->
 	  assert (Obj.tag r = Obj.string_tag);
-	  let nbytes = Sys.word_size / 8 in 
+	  let nbytes = 10 in 
 	  let lsub = nbytes in
 	  let s : string = Obj.magic r in
 	  let l = String.length s in
