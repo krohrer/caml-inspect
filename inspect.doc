@@ -136,22 +136,17 @@ their actual representation.
         {li [h::t]: Block with tag 0 and size 2. First field is [h], second field [t].}
 	}}
     }}
-
 {li {b Objects}: Blocks with tag [Obj.object_tag]. The first field
 refers to the class of the object and its assosicated method
 suite. The second field contains a unique object ID. The remaining
 fields are the instance variables of the object.}
-
 {li {b Variants}: Variants are similar to constructed terms. There are a few differences however.
     {ul
-
     {li Variant constructors are identified by their hash value.}
-
     {li Non-constant variant constructors are not flattened. They are
     always blocks of size 2, where the first field is the hash. The
     second field can either contain a single value, or a pointer to
     another structured block (just like a tuple). }
-
     }}
 }
 
