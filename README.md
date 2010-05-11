@@ -26,9 +26,7 @@ which can then be further processed by [Graphviz][]. In a way, Inspect
 provides a window into the OCaml runtime system, a view behind the
 curtains.
 
-Inspect was originally written by Kaspar M. Rohrer (<kaspar.rohrer@gmail.com>).
-
-[Caml-inspect][Inspect] is hosted on [Github][].
+[Caml-Inspect][] was originally written by Kaspar M. Rohrer (<kaspar.rohrer@gmail.com>).
 
 Installation
 ------------
@@ -203,10 +201,8 @@ References
 
 * [OCaml 3.11 Manual][OCamlManual] - The Objective Caml system (release 3.11), Documentation and user's manual
 * [Graphviz][] - Graph Visualization Software
-* [Github][] - Social Coding
-* [Inspect][] - Source code repository for OCaml Inspect
+* [Caml-Inspect][] - Source code repository for OCaml Inspect
 
 [OCamlManual]: http://caml.inria.fr/pub/docs/manual-ocaml/ "OCaml Manual"
-[Graphviz]: http://www.graphviz.com/ "Graphviz - Graph Visualization Software"
-[Github]: http://www.github.com "Github - Social Coding"
-[Inspect]: http://github.com/krohrer/caml-inspect "Source code repository"
+[Graphviz]: http://www.graphviz.org/ "Graphviz - Graph Visualization Software"
+[Caml-Inspect]: http://github.com/krohrer/caml-inspect "Source code repository"
