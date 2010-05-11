@@ -185,7 +185,7 @@ translation of OCaml types to their actual representation.
     `Obj.no_scan_tag` that encodes the constructor, numbered in order
     of declaration, starting at 0.
 + **Objects**: Blocks with tag `Obj.object_tag`. The first field
-refers to the class of the object and its assosicated method
+refers to the class of the object and its associated method
 suite. The second field contains a unique object ID. The remaining
 fields are the instance variables of the object.
 + **Variants**: Variants are similar to constructed terms. There are a
