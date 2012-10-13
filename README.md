@@ -1,10 +1,10 @@
-OCaml Inspect - caml-inspect.
+OCaml Inspect - caml-inspect
 ======================================================================
 
 > This library is free software; you can redistribute it and/or
 > modify it under the terms of the GNU Lesser General Public
 > License as published by the Free Software Foundation; either
-> version 2.1 of the License, or (at your option) any later version,,
+> version 2.1 of the License, or (at your option) any later version,
 > with the special exception on linking described in file LICENSE.
 
 > This library is distributed in the hope that it will be useful,
@@ -17,7 +17,7 @@ OCaml Inspect - caml-inspect.
 > Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 About
------
+----------------------------------------------------------------------
 
 Inspect is a small library to inspect arbitrary OCaml values and their
 associated object graph by either dumping them as S-expressions (with
@@ -29,7 +29,7 @@ curtains.
 [Caml-Inspect][] was originally written by Kaspar M. Rohrer (<kaspar.rohrer@gmail.com>).
 
 Installation
-------------
+----------------------------------------------------------------------
 
 Unzip or untar in any directory, then run
 
@@ -49,7 +49,7 @@ For development, you may instead run
     sudo ln -s `pwd` `ocamlfind printconf path`/inspect
 
 Usage
------
+----------------------------------------------------------------------
 
 If you have findlib installed, using the library is as simple as
 typing
@@ -84,7 +84,7 @@ It goes without saying that you should have [Graphviz][] installed for
 this last part to work.
 
 Representation of OCaml Values
-------------------------------
+----------------------------------------------------------------------
 
 OCaml values all share a common low-level representation. In contrast
 to dynamically typed languages, it is usually not possible to infer
@@ -197,7 +197,7 @@ few differences however.
 If in doubt, dump it out.
 
 References
-----------
+----------------------------------------------------------------------
 
 * [OCaml 3.11 Manual][OCamlManual] - The Objective Caml system (release 3.11), Documentation and user's manual
 * [Graphviz][] - Graph Visualization Software
