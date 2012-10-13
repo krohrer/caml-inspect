@@ -197,14 +197,14 @@ let is_in_heap r =
 let heap_words r =
   if is_in_heap r then Obj.size r else 0
 
-let mnemonic r = 
+let mnemonic r =
   match tag r with
     | Lazy -> "LAZY"
     | Closure -> "CLOS"
     | Object -> "OBJ"
     | Infix -> "INFX"
     | Forward -> "FWD"
-    | Block -> sprintf "BL%d" (Obj.tag r)
+    | Block -> "BLK"
     | Abstract -> "ABST"
     | String -> "STR"
     | Double -> "DBL"
