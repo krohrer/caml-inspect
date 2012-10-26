@@ -88,7 +88,7 @@ let dump_with_formatter ?(context=default_context) fmt o =
       assert (Obj.tag r = Obj.string_tag);
       let s : string = Obj.magic r in
 	sexpr_sep fmt ();
-	fprintf fmt ":BYTES %d" (String.length s);
+	fprintf fmt ":LEN %d" (String.length s);
 	if context#should_expand r then (
 	  sexpr_sep fmt ();
 	  fprintf fmt "%S" s
@@ -122,7 +122,11 @@ let dump_with_formatter ?(context=default_context) fmt o =
     let body () =
       assert (Obj.tag r < Obj.no_scan_tag);
       let n = Obj.size r and depth = depth + 1 in
+        sexpr_sep fmt ();
+        fprintf fmt ":TAG %d" (Obj.tag r);
 	if context#should_expand r then (
+          sexpr_sep fmt ();
+          fprintf fmt ":VALUES";
 	  for i = 0 to n - 1 do
 	    let f = Obj.field r i in
 	      sexpr_sep fmt ();
@@ -251,6 +255,7 @@ let rec test_data () =
   let data = 
     ([|1|], l, (1,2), [|3; 4|], flush, 1.0, [|2.0; 3.0|],
      TestException ("TestException", -1),
+     test_data,
      ("Hello world", lazy (3 + 5)), g, f, let s = "STRING" in (s, "STRING", s),
      Array.init 20 (drop l),
      stdout, Format.printf, (o, default_context))
