@@ -1,5 +1,3 @@
-(* Kaspar Rohrer, Tue Apr 13 15:36:09 CEST 2010 *)
-
 open Printf
 
 type t = Obj.t
@@ -34,6 +32,43 @@ type custom =
   | Not_custom
 
 external bits : t -> nativeint = "inspect_bits"
+
+let hex_digits = "0123456789ABCDEF"
+
+let dec_of_bits v =
+  sprintf "%nd" v
+
+let hex_of_bits v =
+  let (lsr) = Nativeint.shift_right in
+  let (land) = Nativeint.logand in
+  let ndig = Nativeint.size / 4 in
+  let b = Buffer.create (2 + ndig + 1) in
+  Buffer.add_string b "0x";
+  for i = ndig - 1 downto 0 do
+    let d = (v lsr (i * 4)) land 0xFn in
+    Buffer.add_char b hex_digits.[Nativeint.to_int d]
+  done;
+  Buffer.contents b
+
+let bin_of_bits v =
+  let (lsr) = Nativeint.shift_right in
+  let (land) = Nativeint.logand in
+  let ndig = Nativeint.size in
+  let b = Buffer.create (2 + ndig + 1) in
+  (* three seems reasonable, prefix and maybe null? *)
+  Buffer.add_string b "0b";
+  for i = Sys.word_size - 1 downto 0 do
+    let d = (v lsr i) land 1n in
+    Buffer.add_string b (if d = 1n then "1" else "0")
+  done;
+  Buffer.contents b
+
+let string_of_bits ?(base=`Hex) poly =
+  let v = bits (Obj.repr poly) in
+  match base with
+  | `Dec -> dec_of_bits v
+  | `Hex -> hex_of_bits v
+  | `Bin -> bin_of_bits v
 
 external custom_identifier : t -> string = "inspect_custom_id"
 

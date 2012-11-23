@@ -1,5 +1,3 @@
-(* Kaspar Rohrer, Tue Apr 13 15:43:21 CEST 2010 *)
-
 (** Arbitrary values (based on the [Obj] module) 
     
     This module builds upon the {!Obj} module. It provides the {!tag}
@@ -67,6 +65,9 @@ val hash : t -> int
 
 val bits : t -> nativeint
   (** Return the raw bits of a value *)
+
+val string_of_bits : ?base:[`Dec|`Hex|`Bin] -> t -> string
+  (** Return a string describing the bit pattern of a value *)
 
 val tag : t -> tag
   (** Tag type of a value *)
