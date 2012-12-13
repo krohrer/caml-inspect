@@ -67,11 +67,10 @@ function to generate some interesting data to dump.
     Sexpr.dump (Sexpr.test_data ());;
     Dot.dump (Dot.test_data ());;
 
-It is naturally also possible to let the dump functions inspect
-themselves:
-
-    Sexpr.dump Sexpr.dump;;
-    Dot.dump Dot.dump;;
+It is possible to let the dump functions inspect themselves but I'm
+less and less sure that this is a good idea, as there's a lot of
+mutation going on behind closed doors, which might confuse the current
+object graph walker.
 
 If you are on a Mac, the Inspect.Dot.dump_osx function should be of
 interest. It writes the DOT output to a temporary file, uses Graphviz
