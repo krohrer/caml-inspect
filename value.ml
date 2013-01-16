@@ -63,12 +63,12 @@ let bin_of_bits v =
   done;
   Buffer.contents b
 
-let string_of_bits ?(base=`Hex) poly =
-  let v = bits (Obj.repr poly) in
+let bits_to_string ?(base=`Hex) v =
+  let bs = bits v in
   match base with
-  | `Dec -> dec_of_bits v
-  | `Hex -> hex_of_bits v
-  | `Bin -> bin_of_bits v
+  | `Dec -> dec_of_bits bs
+  | `Hex -> hex_of_bits bs
+  | `Bin -> bin_of_bits bs
 
 external custom_identifier : t -> string = "inspect_custom_id"
 

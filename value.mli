@@ -11,7 +11,7 @@
 (** {6 Types} *)
 
 type t = Obj.t
-    (** [Value.t] is the same as [Obj.t] *)
+(** [Value.t] is the same as [Obj.t] *)
 
 (** This allows better dispatch than comparing the tags. *)
 type tag =
@@ -40,8 +40,6 @@ type custom =
   | Custom_unknown
   | Not_custom
 
-(**  *)
-
 (** A set of tags *)
 module TagSet : sig
   include Set.S with type elt = tag
@@ -64,13 +62,14 @@ val hash : t -> int
 (** {6 Value representation} *)
 
 val bits : t -> nativeint
-  (** Return the raw bits of a value *)
+(** Return the raw bits of a value *)
 
-val string_of_bits : ?base:[`Dec|`Hex|`Bin] -> t -> string
-  (** Return a string describing the bit pattern of a value *)
+val bits_to_string : ?base:[`Dec|`Hex|`Bin] -> t -> string
+(** Return a string describing the low-level bit pattern of a
+    value. *)
 
 val tag : t -> tag
-  (** Tag type of a value *)
+(** Tag type of a value *)
 
 val heap_words : t -> int
   (** Number of words that the value occupies on the heap (without
