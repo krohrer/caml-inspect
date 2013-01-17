@@ -18,8 +18,9 @@ If you have OPAM installed, you should be able to simply do
 
     opam install inspect
 
-If that should not be the case, download an apropriate version and
-unzip or untar in any directory, then run
+If that should not be the case, either download an apropriate version
+[][] and unzip or untar in any directory, or clone the [git
+repository][https://github.com/krohrer/caml-inspect], then run
 
     make
 
@@ -186,7 +187,7 @@ If in doubt, dump it out.
 References
 ----------------------------------------------------------------------
 
-* [OCaml 3.11 Manual][OCamlManual] - The Objective Caml system (release 3.11), Documentation and user's manual
+* [OCaml Manual][OCamlManual] - The Objective Caml system, Documentation and user's manual
 * [Graphviz][] - Graph Visualization Software
 * [Caml-Inspect][] - Source code repository for OCaml Inspect
 
