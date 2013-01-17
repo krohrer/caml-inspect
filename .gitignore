@@ -9,3 +9,5 @@
 .DS_Store
 ._*
 doc/
+
+.#README.md
