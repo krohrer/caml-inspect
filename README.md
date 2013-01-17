@@ -20,7 +20,7 @@ If you have OPAM installed, you should be able to simply do
 
 If that should not be the case, either download an apropriate version
 [][] and unzip or untar in any directory, or clone the [git
-repository][https://github.com/krohrer/caml-inspect], then run
+repository]: https://github.com/krohrer/caml-inspect, then run
 
     make
 
