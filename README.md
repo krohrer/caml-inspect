@@ -4,7 +4,7 @@ OCaml Inspect - caml-inspect
 Inspect is a small library to inspect arbitrary OCaml values and their
 associated object graph by either dumping them as S-expressions (with
 sharing and references), or by writing output in the DOT-language
-which can then be further processed by [Graphviz][]. Inspect provides
+which can then be further processed by [Graphviz](). Inspect provides
 a window into the OCaml runtime system, a view behind the curtains,
 usable from the toplevel as well.
 
@@ -18,9 +18,7 @@ If you have OPAM installed, you should be able to simply do
 
     opam install inspect
 
-If that should not be the case, either download an apropriate version
-[][] and unzip or untar in any directory, or clone the [git
-repository]: https://github.com/krohrer/caml-inspect, then run
+If that should not be the case, either download an apropriate source archive form the [project homepage][Homepage] and unzip or untar in any directory, or clone the [git repository][GitRepository], then run
 
     make
 
@@ -190,10 +188,13 @@ References
 * [OCaml Manual][OCamlManual] - The Objective Caml system, Documentation and user's manual
 * [Graphviz][] - Graph Visualization Software
 * [Caml-Inspect][] - Source code repository for OCaml Inspect
+* [Homepage][] - Project homepage
 
 [OCamlManual]: http://caml.inria.fr/pub/docs/manual-ocaml/ "OCaml Manual"
 [Graphviz]: http://www.graphviz.org/ "Graphviz - Graph Visualization Software"
 [Caml-Inspect]: http://github.com/krohrer/caml-inspect "Source code repository"
+[GitRepository]: http://github.com/krohrer/caml-inspect
+[Homepage]: http://krohrer.github.com/caml-inspect
 
 Licence
 ----------------------------------------------------------------------
