@@ -30,32 +30,262 @@
 
       </header>
       <section>
-        <h3>Welcome to GitHub Pages.</h3>
+        <h1>OCaml Inspect - caml-inspect</h1>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>Inspect is a small library to inspect arbitrary OCaml values and their
+associated object graph by either dumping them as S-expressions (with
+sharing and references), or by writing output in the DOT-language
+which can then be further processed by <a href="">Graphviz</a>. Inspect provides
+a window into the OCaml runtime system, a view behind the curtains,
+usable from the toplevel as well.</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<p>Kaspar M. Rohrer (<a href="mailto:kaspar.rohrer@gmail.com">kaspar.rohrer@gmail.com</a>) is the original author
+and currently also the maintainer of this library.</p>
+
+<h2>Installation</h2>
+
+<p>If you have OPAM installed, you should be able to simply do</p>
+
+<pre><code>opam install inspect
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>If that should not be the case, either download an apropriate source archive form the <a href="http://krohrer.github.com/caml-inspect">project homepage</a> and unzip or untar in any directory, or clone the <a href="http://github.com/krohrer/caml-inspect">git repository</a>, then run</p>
 
-<h3>Designer Templates</h3>
+<pre><code>make
+</code></pre>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<p>to generate the library and documentation.
+To install the library using findlib, simply type</p>
 
-<h3>Rather Drive Stick?</h3>
+<pre><code>make install
+</code></pre>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>And to uninstall it</p>
 
-<h3>Authors and Contributors</h3>
+<pre><code>make uninstall
+</code></pre>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p>For development, you may instead run</p>
 
-<h3>Support or Contact</h3>
+<pre><code>sudo ln -s `pwd` `ocamlfind printconf path`/inspect
+</code></pre>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<h2>Usage</h2>
+
+<p>If you have findlib installed, using the library is as simple as
+typing</p>
+
+<pre><code>#use "topfind";;
+#require "inspect";;
+</code></pre>
+
+<p>into your OCaml prompt. I suggest you open the Inspect module as well.</p>
+
+<pre><code>open Inspect;;
+</code></pre>
+
+<p>For starters, both the Dot and the Sexpr library provide a test_data
+function to generate some interesting data to dump.</p>
+
+<pre><code>Sexpr.dump (Sexpr.test_data ());;
+Dot.dump (Dot.test_data ());;
+</code></pre>
+
+<p>It is possible to let the dump functions inspect themselves but I'm
+less and less sure that this is a good idea, as there's a lot of
+mutation going on behind closed doors, which might confuse the current
+object graph walker.</p>
+
+<p>If you are on a Mac, the Inspect.Dot.dump_osx function should be of
+interest. It writes the DOT output to a temporary file, uses Graphviz
+to generate the graph, and displays the results using the open
+command.</p>
+
+<pre><code>Dot.dump_osx Dot.dump_osx;;
+</code></pre>
+
+<p>It goes without saying that you should have <a href="http://www.graphviz.org/" title="Graphviz - Graph Visualization Software">Graphviz</a> installed for
+this last part to work.</p>
+
+<h2>Representation of OCaml Values</h2>
+
+<p>OCaml values all share a common low-level representation. In contrast
+to dynamically typed languages, it is usually not possible to infer
+the type of a value from the low-level representation, because several
+distinct OCaml types can share the same representation. This is not
+really an issue, because OCaml is statically typed after all. So
+except for some trickery with <code>Obj.magic</code>, it is simply not possible
+to apply a function to a value of the wrong type.</p>
+
+<h3>The Value Type</h3>
+
+<p>The basic building block that is used by the runtime-system (which is
+written in the C programming language) to represent any value in the
+OCaml universe is the value type. Values are always word-sized. A word
+is either 32 or 64 bits wide, depending on the architecture (see
+<code>Sys.word_size</code>).</p>
+
+<p>A value can either be a pointer to a block of values in the OCaml
+heap, a pointer to an object outside of the heap, or an unboxed
+integer. Naturally, blocks in the heap are garbage-collected.</p>
+
+<p>To distinguish between unboxed integers and pointers, the system uses
+the least-significant bit of the value as a flag. If the LSB is set,
+the value is unboxed. If the LSB is cleared, the value is a pointer to
+some other region of memory. This encoding also explains why the int
+type in OCaml is only 31 bits wide (63 bits wide on 64 bit platforms).</p>
+
+<p>Because blocks in the heap are garbage-collected, they have strict
+structure constraints. Information like the tag of a block and its
+size (in words) is encoded in the header of each block.</p>
+
+<p>There are two categories of blocks with respect to the garbage collector:</p>
+
+<ul>
+<li>
+<strong>Structured blocks</strong> may only contain well-formed values, as they are
+recursively traversed by the garbage collector.</li>
+<li>
+<strong>Raw blocks</strong> are not scanned by the garbage collector, and can thus
+contain arbitrary values.</li>
+</ul><p>Structured blocks have tag values lower than <code>Obj.no_scan_tag</code>, while
+raw blocks have tags equal or greater than <code>Obj.no_scan_tag</code>.</p>
+
+<h3>Heap Blocks</h3>
+
+<p>The chapter on <em>Interfacing C with Objective Caml</em> in the <a href="http://caml.inria.fr/pub/docs/manual-ocaml/" title="OCaml Manual">OCaml
+manual</a> describes the following types of blocks. The type
+of a block is its tag, which is stored in the block header. (see
+<code>Obj.tag</code>).</p>
+
+<ul>
+<li>
+<code>0</code> to <code>Obj.no_scan_tag-1</code>, A structured block (an array of Caml
+objects). Each field is a value.</li>
+<li>
+<code>Obj.closure_tag</code>: A closure representing a functional value. The
+first word is a pointer to a piece of code, the remaining words are
+values containing the environment.</li>
+<li>
+<code>Obj.string_tag</code>: A character string.</li>
+<li>
+<code>Obj.double_tag</code>: A double-precision floating-point number.</li>
+<li>
+<code>Obj.double_array_tag</code>: An array or record of double-precision
+floating-point numbers.</li>
+<li>
+<code>Obj.abstract_tag</code>: A block representing an abstract datatype.</li>
+<li>
+<code>Obj.custom_tag</code>: A block representing an abstract datatype with
+user-defined finalization, comparison, hashing, serialization and
+deserialization functions atttached.</li>
+</ul><p>There are a few more structured block types which are not directly
+described in the <a href="http://caml.inria.fr/pub/docs/manual-ocaml/" title="OCaml Manual">manual</a>.</p>
+
+<ul>
+<li>
+<code>Obj.object_tag</code>: A structured block representing an object. The first
+field is a value that describes the class of the object. The second
+field is a unique object id (see <code>Oo.id</code>). The rest of the block
+represents the variables of the object.</li>
+<li>
+<code>Obj.lazy_tag</code>, <code>Obj.forward_tag</code>: These two block types are used by the
+runtime-system to implement lazy-evaulation.</li>
+<li>
+<code>Obj.infix_tag</code>: A special block contained within a closure block. </li>
+</ul><h3>Summary</h3>
+
+<p>This section is only a summary of the most important things.  The
+chapter on <em>Interfacing C with Objective Caml</em> in the <a href="http://caml.inria.fr/pub/docs/manual-ocaml/" title="OCaml Manual">OCaml
+manual</a> gives a much better explanation over the
+translation of OCaml types to their actual representation.</p>
+
+<ul>
+<li>
+<strong>Atomic types</strong>
+
+<ul>
+<li>
+<code>int</code>: Unboxed integer values.</li>
+<li>
+<code>char</code>: Unboxed integer values (ASCII code).</li>
+<li>
+<code>float</code>: Blocks with tag <code>Obj.double_tag</code>.</li>
+<li>
+<code>string</code>: Blocks with tag <code>Obj.string_tag</code>.</li>
+<li>
+<code>int32</code>/<code>int64</code>/<code>nativeint</code>: Blocks with <code>Obj.custom_tag</code>.</li>
+</ul>
+</li>
+<li>
+<strong>Tuples and records</strong>: Blocks with tag 0.</li>
+<li>
+<strong>Arrays</strong>: Blocks with tag 0.</li>
+<li>
+<strong>Arrays and records of floats</strong>: Blocks with tag
+<code>Obj.double_array_tag</code>.</li>
+<li>
+<strong>Concrete types</strong>
+
+<ul>
+<li>
+<em>Constant constructors</em>: Represented by unboxed integers, first
+declared constant constructor is 0, second declared constant
+constructor is 1, and so on.</li>
+<li>
+<em>Non-constant constructors</em>: Blocks with a tag lower than
+<code>Obj.no_scan_tag</code> that encodes the constructor, numbered in order
+of declaration, starting at 0.</li>
+</ul>
+</li>
+<li>
+<strong>Objects</strong>: Blocks with tag <code>Obj.object_tag</code>. The first field
+refers to the class of the object and its associated method
+suite. The second field contains a unique object ID. The remaining
+fields are the instance variables of the object.</li>
+<li>
+<strong>Variants</strong>: Variants are similar to constructed terms. There are a
+few differences however.
+
+<ul>
+<li>Variant constructors are identified by their hash value.</li>
+<li>Non-constant variant constructors are not flattened. They are
+always blocks of size 2, where the first field is the hash. The
+second field can either contain a single value, or a pointer to
+another structured block (just like a tuple).</li>
+</ul>
+</li>
+</ul><p>If in doubt, dump it out.</p>
+
+<h2>References</h2>
+
+<ul>
+<li>
+<a href="http://caml.inria.fr/pub/docs/manual-ocaml/" title="OCaml Manual">OCaml Manual</a> - The Objective Caml system, Documentation and user's manual</li>
+<li>
+<a href="http://www.graphviz.org/" title="Graphviz - Graph Visualization Software">Graphviz</a> - Graph Visualization Software</li>
+<li>
+<a href="http://github.com/krohrer/caml-inspect" title="Source code repository">Caml-Inspect</a> - Source code repository for OCaml Inspect</li>
+<li>
+<a href="http://krohrer.github.com/caml-inspect">Homepage</a> - Project homepage</li>
+</ul><h2>Licence</h2>
+
+<blockquote>
+<p>This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version,
+with the special exception on linking described in file LICENSE.</p>
+
+<p>This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA</p>
+</blockquote>
       </section>
       <footer>
         <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
