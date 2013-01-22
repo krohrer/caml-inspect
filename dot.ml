@@ -324,7 +324,7 @@ let dump_osx ?context ?(cmd="dot") ?(format="pdf") o =
 
 exception TestException of string * int
 
-let rec test_data () =
+let test_data () =
   let rec l = 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: l in
   let rec drop l i =
     if i = 0 then
