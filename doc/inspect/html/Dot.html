@@ -1,0 +1,80 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Value.html">
+<link rel="next" href="Sexpr.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Aux" rel="Chapter" href="Aux.html">
+<link title="Value" rel="Chapter" href="Value.html">
+<link title="Dot" rel="Chapter" href="Dot.html">
+<link title="Sexpr" rel="Chapter" href="Sexpr.html"><title>Caml-Inspect : Dot</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Value.html" title="Value">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Sexpr.html" title="Sexpr">Next</a>
+</div>
+<h1>Module <a href="type_Dot.html">Dot</a></h1>
+<pre><span class="keyword">module</span> Dot: <code class="code">sig</code> <a href="Dot.html">..</a> <code class="code">end</code></pre><div class="info">
+Dumping arbitrary values in the Graphviz DOT language
+<p>
+
+    Context objects are used to configure the dumping process.  A
+    sensible <code class="code">default_context</code> is already provided. 
+<p>
+
+    If you are on OS X and have Graphviz installed, you can try the
+    <code class="code">Inspect.Dot.dump_osx</code> function to dump directly to a
+    temporary PDF file, which will then be opened in Preview.<br>
+</div>
+<hr width="100%">
+<pre><span id="TYPEcontext"><span class="keyword">type</span> <code class="type"></code>context</span> </pre>
+<div class="info">
+The context is used to configure the dumping process<br>
+</div>
+
+<pre><span id="TYPEfollow"><span class="keyword">type</span> <code class="type"></code>follow</span> = <code class="type">src:Obj.t -> field:int -> dst:Obj.t -> bool</code> </pre>
+<div class="info">
+Edge filter predicate<br>
+</div>
+
+<pre><span id="VALdefault_context"><span class="keyword">val</span> default_context</span> : <code class="type"><a href="Dot.html#TYPEcontext">context</a></code></pre><div class="info">
+Context with sensible default values, used as the default
+      argument for the <code class="code">dump</code> function family.<br>
+</div>
+<pre><span id="VALmake_context"><span class="keyword">val</span> make_context</span> : <code class="type">?max_fields:int -> ?follow:<a href="Dot.html#TYPEfollow">follow</a> -> unit -> <a href="Dot.html#TYPEcontext">context</a></code></pre><div class="info">
+Create a custom context. <code class="code">max_fields</code> controls how many fields
+      should be expanded for block nodes.<br>
+</div>
+<pre><span id="VALdump"><span class="keyword">val</span> dump</span> : <code class="type">?context:<a href="Dot.html#TYPEcontext">context</a> -> 'a -> unit</code></pre><div class="info">
+Dump to <code class="code">stdout</code><br>
+</div>
+<pre><span id="VALdump_to_file"><span class="keyword">val</span> dump_to_file</span> : <code class="type">?context:<a href="Dot.html#TYPEcontext">context</a> -> string -> 'a -> unit</code></pre><div class="info">
+Dump directly to a file. <b>The file will be overwritten if it
+      already exists.</b><br>
+</div>
+<pre><span id="VALdump_with_formatter"><span class="keyword">val</span> dump_with_formatter</span> : <code class="type">?context:<a href="Dot.html#TYPEcontext">context</a> -> Format.formatter -> 'a -> unit</code></pre><div class="info">
+Dump using the <code class="code">Format</code> module for pretty printing.<br>
+</div>
+<pre><span id="VALdump_osx"><span class="keyword">val</span> dump_osx</span> : <code class="type">?context:<a href="Dot.html#TYPEcontext">context</a> -> ?cmd:string -> ?format:string -> 'a -> unit</code></pre><div class="info">
+<code class="code">dump_osx ?context ?cmd ?format o</code> dumps the value <code class="code">o</code> to a
+      temporary file, runs the Graphviz program given by <code class="code">cmd</code> on it
+      to generate output as specified by <code class="code">format</code>, and then opens
+      the generated output with the <code class="code">open</code> command. The default output format is "pdf".
+<p>
+
+      E.g. <code class="code">Inspect.Dot.dump_osx ~cmd:"neato" (Inspect.test_data ())</code>
+<p>
+
+      This function will block while the graph is being generated.<br>
+</div>
+<pre><span id="VALtest_data"><span class="keyword">val</span> test_data</span> : <code class="type">unit -> Obj.t</code></pre><div class="info">
+Generate test data to inspect<br>
+</div>
+</body></html>
