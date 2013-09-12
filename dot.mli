@@ -33,16 +33,18 @@ val dump_to_file : ?context:context -> string -> 'a -> unit
 val dump_with_formatter : ?context:context -> Format.formatter -> 'a -> unit
   (** Dump using the [Format] module for pretty printing. *)
 
-val dump_osx : ?context:context -> ?cmd:string -> ?format:string -> ?viewer:string -> 'a -> unit
-  (** [dump_osx ?context ?cmd ?format ?viewer o] dumps the value [o] to a
+val dump_and_open : ?context:context -> ?cmd:string -> format:string -> viewer:string -> 'a -> unit
+  (** [dump_and_open ?context ?cmd ~format ~viewer o] dumps the value [o] to a
       temporary file, runs the Graphviz program given by [cmd] on it
       to generate output as specified by [format], and then opens
-      the generated output with the [viewer] command. The default output
-      format is "pdf".  The default viewer is "open".
+      the generated output with the [viewer] command.
 
       E.g. [Inspect.Dot.dump_osx ~cmd:"neato" (Inspect.test_data ())]
 
       This function will block while the graph is being generated. *)
+
+val dump_osx : ?context:context -> ?cmd:string -> 'a -> unit
+  (** Call {!val:dump_and_open} with [format] "pdf" and [viewer] "open". *)
 
 val test_data : unit -> Obj.t
   (** Generate test data to inspect *)
