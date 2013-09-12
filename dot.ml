@@ -302,7 +302,7 @@ let dump_to_out_channel ?context outc o =
 let dump_to_file ?context filename o =
   with_file_out_channel filename (fun outc -> dump_to_out_channel ?context outc o)
 
-let dump_osx ?context ?(cmd="dot") ?(format="pdf") o =
+let dump_and_open ?context ?(cmd="dot") ~format ~viewer o =
   let exec cmd =
     if Sys.command cmd <> 0 then (
       Printf.eprintf "OCaml Inspect: Could not execute command: %s" cmd;
@@ -316,9 +316,12 @@ let dump_osx ?context ?(cmd="dot") ?(format="pdf") o =
   let outfile = basename ^ format in
     dump_to_file ?context dotfile o;
     let dotcmd = sprintf "%S -T%s -o %S %S" cmd format outfile dotfile in
-    let outcmd = sprintf "open %S" outfile in
+    let outcmd = sprintf "%S %S" viewer outfile in
       if exec dotcmd && exec outcmd then
 	()
+
+let dump_osx ?context ?(cmd="dot") o =
+  dump_and_open ?context ~cmd ~format:"pdf" ~viewer:"open" o
 
 (*----------------------------------------------------------------------------*)
 
