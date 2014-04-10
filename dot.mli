@@ -3,7 +3,7 @@
 (** Dumping arbitrary values in the Graphviz DOT language
 
     Context objects are used to configure the dumping process.  A
-    sensible [default_context] is already provided. 
+    sensible [default_context] is already provided.
 
     If you are on OS X and have Graphviz installed, you can try the
     [Inspect.Dot.dump_osx] function to dump directly to a
@@ -26,12 +26,21 @@ val make_context : ?max_fields:int -> ?follow:follow -> unit -> context
 val dump : ?context:context -> 'a -> unit
   (** Dump to [stdout] *)
 
+val dump_list : ?context:context -> (string * 'a) list -> unit
+  (** Same as {!dump} but for a list of labeled values.*)
+
 val dump_to_file : ?context:context -> string -> 'a -> unit
   (** Dump directly to a file. {b The file will be overwritten if it
       already exists.} *)
 
+val dump_list_to_file : ?context:context -> string -> (string * 'a) list -> unit
+  (** Same as {!dump_to_file} but for a list of labeled values.*)
+
 val dump_with_formatter : ?context:context -> Format.formatter -> 'a -> unit
   (** Dump using the [Format] module for pretty printing. *)
+
+val dump_list_with_formatter : ?context:context -> Format.formatter -> (string * 'a) list -> unit
+  (** Same as {!dump_with_formatter} but for a list of labeled values.*)
 
 val dump_and_open : ?context:context -> ?cmd:string -> format:string -> viewer:string -> 'a -> unit
   (** [dump_and_open ?context ?cmd ~format ~viewer o] dumps the value [o] to a
@@ -43,8 +52,15 @@ val dump_and_open : ?context:context -> ?cmd:string -> format:string -> viewer:s
 
       This function will block while the graph is being generated. *)
 
+val dump_list_and_open : ?context:context -> ?cmd:string ->
+  format:string -> viewer:string -> (string * 'a) list -> unit
+  (** Same as {!dump_and_open} but for a list of labeled values.*)
+
 val dump_osx : ?context:context -> ?cmd:string -> 'a -> unit
   (** Call {!val:dump_and_open} with [format] "pdf" and [viewer] "open". *)
+
+val dump_list_osx : ?context:context -> ?cmd:string -> (string * 'a) list -> unit
+  (** Same as {!dump_osx} but for a list of labeled values.*)
 
 val test_data : unit -> Obj.t
   (** Generate test data to inspect *)
