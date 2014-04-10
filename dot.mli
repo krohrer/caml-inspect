@@ -9,11 +9,28 @@
     [Inspect.Dot.dump_osx] function to dump directly to a
     temporary PDF file, which will then be opened in Preview. *)
 
-type context
+type dot_attrs = (string * string) list
+
+class type context_t =
+  object
+    method graph_attrs : dot_attrs
+    method all_nodes_attrs : dot_attrs
+    method all_edges_attrs : dot_attrs
+    method node_attrs : ?root:bool -> Obj.t -> dot_attrs
+    method edge_attrs : src:Obj.t -> field:int -> dst:Obj.t -> dot_attrs
+    method label_attrs : string -> dot_attrs
+
+    method should_inline : Obj.t -> bool
+    method should_follow_edge : src:Obj.t -> field:int -> dst:Obj.t -> bool
+    method max_fields_for_node : Obj.t -> int
+  end
   (** The context is used to configure the dumping process *)
 
 type follow = src:Obj.t -> field:int -> dst:Obj.t -> bool
   (** Edge filter predicate *)
+
+class context : ?max_fields: int -> ?follow:follow -> unit -> context_t
+  (** The default context class. *)
 
 val default_context : context
   (** Context with sensible default values, used as the default

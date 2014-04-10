@@ -11,7 +11,7 @@ type follow = src:Obj.t -> field:int -> dst:Obj.t -> bool
 
 (*----------------------------------------------------------------------------*)
 
-class type context =
+class type context_t =
 object
   method graph_attrs : dot_attrs
   method all_nodes_attrs : dot_attrs
@@ -144,7 +144,7 @@ let label_of_value context r =
 let follow_all ~src ~field ~dst =
   true
 
-let make_context ?(max_fields=5) ?(follow=follow_all) () =
+class context ?(max_fields=5) ?(follow=follow_all) () : context_t =
 object(self)
   method graph_attrs =
     [
@@ -206,6 +206,7 @@ object(self)
     max_fields
 end
 
+let make_context ?max_fields ?follow () = new context ?max_fields ?follow ();;
 let default_context = make_context ()
 
 (*----------------------------------------------------------------------------*)
