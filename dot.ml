@@ -11,13 +11,15 @@ type follow = src:Obj.t -> field:int -> dst:Obj.t -> bool
 
 (*----------------------------------------------------------------------------*)
 
-class type context =
+class type context_t =
 object
   method graph_attrs : dot_attrs
   method all_nodes_attrs : dot_attrs
   method all_edges_attrs : dot_attrs
   method node_attrs : ?root:bool -> Obj.t -> dot_attrs
   method edge_attrs : src:Obj.t -> field:int -> dst:Obj.t -> dot_attrs
+  method label_attrs : string -> dot_attrs
+  method label_edge_attrs : string -> dot_attrs
 
   method should_inline : Obj.t -> bool
   method should_follow_edge : src:Obj.t -> field:int -> dst:Obj.t -> bool
@@ -38,7 +40,7 @@ let attrs_colorscheme_for_value ?(k=2.) ?lower ?upper color_scheme n r attrs =
   let x = i2f (Value.heap_words r) in
   let y = f2i (arcsinh ( x /. k )) in
   let i = min upper (y + lower) in
-  let attrs = 
+  let attrs =
     ("colorscheme", color_scheme ^ string_of_int n)
     :: ("fillcolor", string_of_int i)
     :: ("color", string_of_int n)
@@ -120,16 +122,16 @@ let label_of_value context r =
 
       | Value.String ->
 	  assert (Obj.tag r = Obj.string_tag);
-	  let nbytes = 10 in 
+	  let nbytes = 10 in
 	  let lsub = nbytes in
 	  let s : string = Obj.magic r in
 	  let l = String.length s in
 	  let n = (l + lsub - 1) / lsub in
 	    bprint_fields b n (
-	      fun i -> 
+	      fun i ->
 		let isub = i * nbytes in
 		let len = min (l - isub) lsub in
-		  if l <= isub + nbytes then 
+		  if l <= isub + nbytes then
 		    sprintf "%S" (String.sub s isub len)
 		  else
 		    sprintf "%S..." (String.sub s isub len)
@@ -143,9 +145,8 @@ let label_of_value context r =
 let follow_all ~src ~field ~dst =
   true
 
-let make_context ?(max_fields=5) ?(follow=follow_all) () =
+class context ?(max_fields=5) ?(follow=follow_all) () : context_t =
 object(self)
-
   method graph_attrs =
     [
       "rankdir", "LR";
@@ -168,7 +169,7 @@ object(self)
     ]
 
   method node_attrs ?(root=false) r =
-    let attrs_for_root attrs = 
+    let attrs_for_root attrs =
       if root then
 	(* ("fontcolor", "#ff0000") :: *) ("penwidth", "8.0") :: attrs
       else
@@ -179,7 +180,15 @@ object(self)
   method edge_attrs ~src ~field ~dst =
     [ "label", string_of_int field ]
 
-  method should_inline r = 
+  method label_attrs s =
+      [ "style", "rounded, filled" ;
+        "fillcolor", "yellow" ;
+        "label", s ;
+      ]
+  method label_edge_attrs _ =
+      [ "style", "dashed" ]
+
+  method should_inline r =
     match Value.tag r with
       | Value.Custom -> (
 	  match Value.custom_value r with
@@ -200,11 +209,12 @@ object(self)
     max_fields
 end
 
+let make_context ?max_fields ?follow () = new context ?max_fields ?follow ();;
 let default_context = make_context ()
 
 (*----------------------------------------------------------------------------*)
 
-let dump_with_formatter ?(context=default_context) fmt o =
+let dump_list_with_formatter ?(context=default_context) fmt objs =
   let queue = Queue.create () in
 
   let rec value2nid = HT.create 31337
@@ -275,34 +285,69 @@ let dump_with_formatter ?(context=default_context) fmt o =
       node_one fmt id node_attrs;
       dot_fields fmt id r
   in
+  let dot_label =
+    let counter = ref 0 in
+    fun fmt (label, node_id) ->
+      match label with
+        "" -> ()
+      | _ ->
+          incr counter ;
+          let label_node_id = "label_"^(string_of_int !counter) in
+          let attrs = context#label_attrs label in
+          node_one fmt label_node_id attrs ;
+          fprintf fmt "@[<2>%s ->@ %s@ [" label_node_id node_id;
+          attr_list fmt (context#label_edge_attrs label);
+          fprintf fmt "];@]@,"
+  in
 
-  let r = Obj.repr o in
-  let root_id = node_id_of_value r in
-    fprintf fmt "@[<v>@[<v 2>digraph {@,";
-    node_one fmt "graph" (("root", root_id) :: context#graph_attrs);
-    node_one fmt "node" context#all_nodes_attrs;
-    node_one fmt "edge" context#all_edges_attrs;
-    while not (Queue.is_empty queue) do
-      let r = Queue.pop queue in
-	dot_value fmt (node_id_of_value r) r
-    done;
-    fprintf fmt "@]@,}@]";
-    pp_print_newline fmt ()
+  let labels_ids =
+    List.map (fun (label,o) -> (label, node_id_of_value (Obj.repr o))) objs
+  in
+  fprintf fmt "@[<v>@[<v 2>digraph {@,";
+  let graph_attrs =
+    (match labels_ids with
+      [] -> []
+    | (_,id) :: _ -> ["root", id]
+    ) @ context#graph_attrs
+  in
+  node_one fmt "graph" graph_attrs ;
+  node_one fmt "node" context#all_nodes_attrs;
+  node_one fmt "edge" context#all_edges_attrs;
+  while not (Queue.is_empty queue) do
+    let r = Queue.pop queue in
+    dot_value fmt (node_id_of_value r) r
+  done;
+  List.iter (dot_label fmt) labels_ids;
+  fprintf fmt "@]@,}@]";
+  pp_print_newline fmt ()
 
 (*----------------------------------------------------------------------------*)
+let dump_with_formatter ?context fmt o =
+  dump_list_with_formatter ?context fmt ["", o]
 
 let dump ?context o =
   let fmt = Format.std_formatter in
     dump_with_formatter ?context fmt o
 
+let dump_list ?context objs =
+  let fmt = Format.std_formatter in
+    dump_with_formatter ?context fmt objs
+
 let dump_to_out_channel ?context outc o =
   let fmt = Format.formatter_of_out_channel outc in
     dump_with_formatter ?context fmt o
 
+let dump_list_to_out_channel ?context outc objs =
+  let fmt = Format.formatter_of_out_channel outc in
+    dump_list_with_formatter ?context fmt objs
+
 let dump_to_file ?context filename o =
   with_file_out_channel filename (fun outc -> dump_to_out_channel ?context outc o)
 
-let dump_and_open ?context ?(cmd="dot") ~format ~viewer o =
+let dump_list_to_file ?context filename objs =
+  with_file_out_channel filename (fun outc -> dump_list_to_out_channel ?context outc objs)
+
+let dump_list_and_open ?context ?(cmd="dot") ~format ~viewer objs =
   let exec cmd =
     if Sys.command cmd <> 0 then (
       Printf.eprintf "OCaml Inspect: Could not execute command: %s" cmd;
@@ -310,18 +355,24 @@ let dump_and_open ?context ?(cmd="dot") ~format ~viewer o =
     )
     else
       true
-  in      
+  in
   let basename = Filename.temp_file "camldump" "." in
   let dotfile = basename ^ "dot" in
   let outfile = basename ^ format in
-    dump_to_file ?context dotfile o;
+    dump_list_to_file ?context dotfile objs;
     let dotcmd = sprintf "%S -T%s -o %S %S" cmd format outfile dotfile in
     let outcmd = sprintf "%S %S" viewer outfile in
       if exec dotcmd && exec outcmd then
 	()
 
-let dump_osx ?context ?(cmd="dot") o =
-  dump_and_open ?context ~cmd ~format:"pdf" ~viewer:"open" o
+let dump_and_open  ?context ?cmd ~format ~viewer o =
+  dump_list_and_open ?context ?cmd ~format ~viewer ["",o]
+
+let dump_list_osx ?context ?(cmd="dot") objs =
+  dump_list_and_open ?context ~cmd ~format:"pdf" ~viewer:"open" objs
+
+let dump_osx ?context ?cmd o =
+  dump_list_osx ?context ?cmd ["",o]
 
 (*----------------------------------------------------------------------------*)
 
@@ -343,10 +394,10 @@ let test_data () =
   let o = object
     val brog = 4
     val brag = 51251
-    method blah = 3 
+    method blah = 3
     method foo () a = a
   end in
-  let data = 
+  let data =
     ([|1|], l, (1,2), [|3; 4|], flush, 1.0, [|2.0; 3.0|],
      TestException ("TestException", -1),
      String.make 1000000 'a',
