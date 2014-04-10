@@ -18,7 +18,9 @@ If you have OPAM installed, you should be able to simply do
 
     opam install inspect
 
-If that should not be the case, either download an apropriate source archive form the [project homepage][Homepage] and unzip or untar in any directory, or clone the [git repository][GitRepository], then run
+If that should not be the case, either download an apropriate source
+archive form the [project homepage][Homepage] and unzip or untar in
+any directory, or clone the [git repository][GitRepository], then run
 
     make
 
@@ -44,11 +46,11 @@ typing
     #use "topfind";;
     #require "inspect";;
 
-into your OCaml prompt. I suggest you open the Inspect module as well.
+into your OCaml prompt. I suggest you open the `Inspect` module as well.
 
     open Inspect;;
 
-For starters, both the Dot and the Sexpr library provide a test_data
+For starters, both the `Dot` and the `Sexpr` library provide a test_data
 function to generate some interesting data to dump.
 
     Sexpr.dump (Sexpr.test_data ());;
@@ -59,13 +61,15 @@ less and less sure that this is a good idea, as there's a lot of
 mutation going on behind closed doors, which might confuse the current
 object graph walker.
 
-If you are on a Mac, the Inspect.Dot.dump_osx function should be of
+On any platform, you should be able to dump values 
+
+If you are on a Mac, the `Inspect.Dot.dump_osx` function should be of
 interest. It writes the DOT output to a temporary file, uses Graphviz
-to generate the graph, and displays the results using the open
+to render the graph as a pdf document, and displays it using the open
 command.
 
-    Dot.dump_osx Dot.dump_osx;;
-
+    Dot.dump_osx (Dot.test_data ());;
+	
 It goes without saying that you should have [Graphviz][] installed for
 this last part to work.
 
