@@ -19,6 +19,7 @@ class type context_t =
     method node_attrs : ?root:bool -> Obj.t -> dot_attrs
     method edge_attrs : src:Obj.t -> field:int -> dst:Obj.t -> dot_attrs
     method label_attrs : string -> dot_attrs
+    method label_edge_attrs : string -> dot_attrs
 
     method should_inline : Obj.t -> bool
     method should_follow_edge : src:Obj.t -> field:int -> dst:Obj.t -> bool

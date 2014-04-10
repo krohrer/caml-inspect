@@ -19,6 +19,7 @@ object
   method node_attrs : ?root:bool -> Obj.t -> dot_attrs
   method edge_attrs : src:Obj.t -> field:int -> dst:Obj.t -> dot_attrs
   method label_attrs : string -> dot_attrs
+  method label_edge_attrs : string -> dot_attrs
 
   method should_inline : Obj.t -> bool
   method should_follow_edge : src:Obj.t -> field:int -> dst:Obj.t -> bool
@@ -184,6 +185,8 @@ object(self)
         "fillcolor", "yellow" ;
         "label", s ;
       ]
+  method label_edge_attrs _ =
+      [ "style", "dashed" ]
 
   method should_inline r =
     match Value.tag r with
@@ -292,7 +295,9 @@ let dump_list_with_formatter ?(context=default_context) fmt objs =
           let label_node_id = "label_"^(string_of_int !counter) in
           let attrs = context#label_attrs label in
           node_one fmt label_node_id attrs ;
-          fprintf fmt "@[<2>%s ->@ %s@ ;@]@," label_node_id node_id
+          fprintf fmt "@[<2>%s ->@ %s@ [" label_node_id node_id;
+          attr_list fmt (context#label_edge_attrs label);
+          fprintf fmt "];@]@,"
   in
 
   let labels_ids =
