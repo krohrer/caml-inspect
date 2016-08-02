@@ -287,7 +287,9 @@ let description r =
     | Forward      -> "Forward: #" ^ string_of_int (Obj.size r)
     | Block        -> sprintf "Block(%d): #%d" (Obj.tag r) (Obj.size r)
     | Abstract     -> "Abstract: #" ^ string_of_int (Obj.size r)
-    | String       -> sprintf "String: %d chars" (String.length (Obj.magic r : string))
+    | String       ->
+        let len = String.length (Obj.magic r : string) in
+        sprintf "String: %d char%s" len (if len > 1 then "s" else "")
     | Double       -> sprintf "Double: %g" (Obj.magic r : float)
     | Double_array -> sprintf "Double_array: %d floats" (Array.length (Obj.magic r : float array))
     | Custom       -> (
